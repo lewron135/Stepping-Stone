@@ -8,16 +8,16 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useStore } from '../contexts/StoreContext';
 import { useUser } from '../hooks/useUser';
-import { incomingQueue } from '../data/interactions';
+import { useToast } from '../contexts/ToastContext';
+import * as api from '../lib/api';
 import { clockTime, deadlineLabel, rupiah, timeAgo } from '../utils/format';
 import { cn } from '../utils/cn';
 import type { Agreement, Message, User } from '../types';
 
-const POLL_MS = 2500;
-
 export function Chat() {
   const { threadId } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const {
     threads,
     messagesForThread,
@@ -26,13 +26,10 @@ export function Chat() {
     ensureUser,
     currentUser,
     sendMessage,
-    receiveMessage,
     agreementForJob
   } = useStore();
 
   const [draft, setDraft] = useState('');
-  const deliveredRef = useRef<Record<string, number>>({});
-  const tickRef = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeThread = threads.find((thread) => thread.id === threadId);
@@ -60,22 +57,25 @@ export function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threads.map((thread) => thread.id).join(','), ensureUser, getUser, currentUser.id]);
 
+  const [lastMessageByThread, setLastMessageByThread] = useState<Record<string, Message>>({});
+
   const [messages, setMessages] = useState<Message[]>([]);
   useEffect(() => {
     if (!activeThread) {
       setMessages([]);
       return;
     }
-    let cancelled = false;
-    messagesForThread(activeThread.id).then((list) => {
-      if (!cancelled) setMessages(list);
+    const activeThreadId = activeThread.id;
+    const stop = api.pollMessages(activeThreadId, (list) => {
+      setMessages(list);
+      setLastMessageByThread((prev) => ({
+        ...prev,
+        [activeThreadId]: list[list.length - 1] ?? prev[activeThreadId]
+      }));
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeThread, messagesForThread]);
+    return () => stop();
+  }, [activeThread]);
 
-  const [lastMessageByThread, setLastMessageByThread] = useState<Record<string, Message>>({});
   useEffect(() => {
     let cancelled = false;
     Promise.all(
@@ -116,30 +116,26 @@ export function Chat() {
     };
   }, [activeThread, getJob, agreementForJob]);
 
-  // Polling: chat refreshes every few seconds instead of a live socket.
-  useEffect(() => {
-    if (!activeThread) return;
-    const queue = incomingQueue[activeThread.id] ?? [];
-    const timer = window.setInterval(() => {
-      tickRef.current += 1;
-      if (tickRef.current % 3 !== 0) return;
-      const delivered = deliveredRef.current[activeThread.id] ?? 0;
-      if (delivered >= queue.length) return;
-      deliveredRef.current[activeThread.id] = delivered + 1;
-      const other = activeThread.participantIds.find((id) => id !== currentUser.id);
-      if (other) receiveMessage(activeThread.id, queue[delivered], other);
-    }, POLL_MS);
-    return () => window.clearInterval(timer);
-  }, [activeThread, currentUser.id, receiveMessage]);
-
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages.length, threadId]);
 
-  const submit = () => {
+  const submit = async () => {
     if (!activeThread || !draft.trim()) return;
-    sendMessage(activeThread.id, draft.trim());
+    const text = draft.trim();
+    const activeThreadId = activeThread.id;
     setDraft('');
+    try {
+      await sendMessage(activeThreadId, text);
+      const list = await messagesForThread(activeThreadId);
+      setMessages(list);
+      setLastMessageByThread((prev) => ({
+        ...prev,
+        [activeThreadId]: list[list.length - 1] ?? prev[activeThreadId]
+      }));
+    } catch (error) {
+      toast('Gagal mengirim pesan', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   const list =

@@ -31,7 +31,7 @@ interface StoreValue {
   offersForJob: (jobId: string) => Promise<Offer[]>;
   agreementForJob: (jobId: string) => Promise<Agreement | undefined>;
   myOfferForJob: (jobId: string) => Offer | undefined;
-  threadForJob: (jobId: string, otherUserId: string) => Thread;
+  threadForJob: (jobId: string, otherUserId: string) => Promise<Thread>;
   messagesForThread: (threadId: string) => Promise<Message[]>;
   createJob: (input: NewJobInput) => Promise<Job>;
   submitOffer: (jobId: string, price: number, note: string) => Promise<void>;
@@ -42,14 +42,10 @@ interface StoreValue {
   closeWithoutConfirmation: (agreementId: string) => Promise<void>;
   cancelAgreement: (agreementId: string) => Promise<void>;
   reportUnpaid: (agreementId: string) => Promise<void>;
-  sendMessage: (threadId: string, text: string, senderId?: string) => void;
-  receiveMessage: (threadId: string, text: string, senderId: string) => void;
+  sendMessage: (threadId: string, text: string) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
-
-let counter = 100;
-const nextId = (prefix: string) => `${prefix}${++counter}`;
 
 export function StoreProvider({ children }: {children: React.ReactNode;}) {
   const { userId } = useAuth();
@@ -70,17 +66,19 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
       setLoading(true);
       try {
         if (userId) {
-          const [user, jobsList, offersList, agreementsList] = await Promise.all([
+          const [user, jobsList, offersList, agreementsList, threadsList] = await Promise.all([
           api.fetchUser(userId),
           api.fetchJobs(),
           api.fetchMyOffers(userId),
-          api.fetchMyAgreements(userId)]
+          api.fetchMyAgreements(userId),
+          api.fetchMyThreads(userId)]
           );
           if (cancelled) return;
           setCurrentUser(user ?? null);
           setJobs(jobsList);
           setOffers(offersList);
           setAgreements(agreementsList);
+          setThreads(threadsList);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -146,21 +144,14 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
       offers.find((offer) => offer.jobId === jobId && offer.workerId === currentUser.id),
       messagesForThread: (threadId) => api.fetchMessagesForThread(threadId),
 
-      threadForJob: (jobId, otherUserId) => {
-        const existing = threads.find(
-          (thread) =>
-          thread.jobId === jobId &&
-          thread.participantIds.includes(currentUser.id) &&
-          thread.participantIds.includes(otherUserId)
-        );
-        if (existing) return existing;
-        const thread: Thread = {
-          id: nextId('t'),
-          jobId,
-          participantIds: [currentUser.id, otherUserId]
-        };
-        setThreads((prev) => [...prev, thread]);
-        return thread;
+      threadForJob: async (jobId, otherUserId) => {
+        try {
+          const thread = await api.getOrCreateThread(jobId, otherUserId);
+          setThreads((prev) => [thread, ...prev.filter((item) => item.id !== thread.id)]);
+          return thread;
+        } catch (error) {
+          throw error;
+        }
       },
 
       createJob: async (input) => {
@@ -262,24 +253,13 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
         }
       },
 
-      sendMessage: (threadId, text, senderId) => {
-        setMessages((prev) => [
-        ...prev,
-        {
-          id: nextId('m'),
-          threadId,
-          senderId: senderId ?? currentUser.id,
-          text,
-          createdAt: new Date().toISOString()
-        }]
-        );
-      },
-
-      receiveMessage: (threadId, text, senderId) => {
-        setMessages((prev) => [
-        ...prev,
-        { id: nextId('m'), threadId, senderId, text, createdAt: new Date().toISOString() }]
-        );
+      sendMessage: async (threadId, text) => {
+        try {
+          const message = await api.sendMessage(threadId, text);
+          setMessages((prev) => [...prev, message]);
+        } catch (error) {
+          throw error;
+        }
       }
     };
   }, [agreements, bumpStat, currentUser, getUser, jobs, loading, messages, offers, threads, users]);

@@ -85,9 +85,13 @@ export function JobDetail() {
 
   }
 
-  const openChat = (otherUserId: string) => {
-    const thread = threadForJob(job.id, otherUserId);
-    navigate(`/chat/${thread.id}`);
+  const openChat = async (otherUserId: string) => {
+    try {
+      const thread = await threadForJob(job.id, otherUserId);
+      navigate(`/chat/${thread.id}`);
+    } catch (error) {
+      toast('Gagal membuka chat', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   const handleSelect = async (offerId: string) => {

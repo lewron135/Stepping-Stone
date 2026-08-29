@@ -122,6 +122,16 @@ export async function fetchMyAgreements(userId: string): Promise<Agreement[]> {
   return (data ?? []).map(mapAgreement);
 }
 
+export async function fetchMyThreads(userId: string): Promise<Thread[]> {
+  const { data, error } = await supabase
+    .from('threads')
+    .select('*')
+    .contains('participant_ids', [userId])
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapThread);
+}
+
 export async function fetchMessagesForThread(threadId: string): Promise<Message[]> {
   const { data, error } = await supabase
     .from('messages')

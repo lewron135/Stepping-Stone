@@ -97,11 +97,15 @@ export function AgreementPage() {
     }
   };
 
-  const openChat = () => {
+  const openChat = async () => {
     if (!job) return;
     const other = isClient ? agreement.workerId : agreement.clientId;
-    const thread = threadForJob(job.id, other);
-    navigate(`/chat/${thread.id}`);
+    try {
+      const thread = await threadForJob(job.id, other);
+      navigate(`/chat/${thread.id}`);
+    } catch (error) {
+      toast('Gagal membuka chat', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   const partyRow = (
