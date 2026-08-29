@@ -163,6 +163,29 @@ Unggah CV → sistem mengekstrak skill → merekomendasikan pekerjaan di tab Pro
 
 **Privasi (wajib):** file CV mentah **dihapus** segera setelah ekstraksi. Hanya daftar skill yang disimpan. Sediakan tombol hapus data di pengaturan.
 
+### 4.11 AI Search Assistant (fitur pendukung, opsional)
+
+> Ditambahkan 29 Agustus 2026, setelah salah satu anggota tim mengusulkan ide kotak pencarian bahasa natural di feed.
+
+**Ide:** kotak pencarian bahasa natural di atas feed. User mengetik kalimat bebas (misal *"cari kerjaan desain yang deket kampus, harga di bawah 50 ribu"*), sistem menerjemahkannya jadi filter terstruktur (tab, kategori, area, harga maksimal), lalu filter itu dijalankan lewat logika filter yang sudah ada di feed — **bukan** LLM yang menyortir daftar pekerjaan secara langsung.
+
+**Kenapa begini, bukan chatbot yang "menyortir kerjaan":**
+- LLM cuma bertugas menerjemahkan niat → JSON filter terstruktur (pakai Structured Outputs/Zod schema di Claude API, bukan parsing string bebas). Sorting/filtering tetap kode deterministik yang sudah ada di komponen filter feed. Ini jauh lebih murah, cepat, dan gampang diuji dibanding minta LLM mengembalikan daftar pekerjaan lengkap.
+- Kalau API gagal, limit habis, atau tidak ada koneksi, **wajib ada fallback keyword-match biasa** (string match ke judul/kategori/tag) supaya pencarian tetap berfungsi tanpa AI sama sekali.
+
+**Model & biaya:** Claude Haiku 4.5 (`claude-haiku-4-5`), model termurah yang cukup untuk tugas ekstraksi terstruktur seperti ini. Estimasi ±$0,001 per query — dengan budget $5 credit Anthropic yang tim punya, itu ±4.000–5.000 query, jauh lebih dari cukup untuk development sampai demo final.
+
+**Kunci arsitektur (wajib dipatuhi):**
+- API key Anthropic **tidak boleh** ada di kode frontend — harus lewat backend/serverless function (lihat Keputusan Teknis 11.6 dan catatan di bagian 20 soal Next.js vs Vite+serverless).
+- Trigger saat submit, bukan tiap ketikan (kontrol biaya & UX).
+- Saat demo di depan juri, siapkan beberapa query contoh dengan jawaban yang sudah direkam/di-cache — sama seperti aturan 11.4 untuk Career Compass.
+
+**Positioning ke juri:** ini "asisten pencarian", bukan "AI job-matcher". Jangan disandingkan sebagai pengganti atau saingan Career Compass — dua fitur ini punya tujuan beda (Search Assistant = mempercepat menemukan, Career Compass = merekomendasikan yang sedikit di atas level skill).
+
+**Prioritas:** masuk daftar "Sebaiknya Ada" (lihat bagian 10), dikerjakan Orang C setelah Career Compass dan fitur wajib lain selesai. Kalau waktu mepet menjelang 3 September, ini yang pertama dipotong — bukan Career Compass, karena Career Compass sudah lebih dulu direncanakan dan masuk penilaian dokumentasi.
+
+**Status implementasi saat ini: belum dikerjakan.** Tim masih fokus membangun frontend dulu — bagian ini murni catatan rencana supaya konteksnya tidak hilang sebelum dieksekusi.
+
 ---
 
 ## 5. YANG STEPPING STONE TIDAK LAKUKAN
@@ -194,7 +217,7 @@ Ada **ambang minimum nilai transaksi**. Di bawah ambang itu bebas biaya, karena 
 | Frontend | **Next.js (React) + Tailwind CSS** | Cepat dibangun, komponen responsif |
 | Backend | **Node.js lewat API Routes Next.js** | Menyatu dengan frontend jadi satu aplikasi, satu bahasa untuk seluruh tim, satu target deploy |
 | Database | **MongoDB (Mongoose)** | Fleksibel untuk struktur postingan yang beda antar kategori |
-| AI | **Gemini API atau OpenAI API** | Untuk membaca CV dan mengekstrak skill |
+| AI | **Claude API (Anthropic), model Haiku 4.5** | Ekstraksi skill dari CV (Career Compass) dan, kalau sempat, parsing query bahasa natural jadi filter terstruktur (Search Assistant — lihat 4.11). Dipilih karena tim punya $5 credit Anthropic; Haiku 4.5 murah (±$0,001/panggilan) dan cukup untuk tugas ekstraksi terstruktur, tidak butuh reasoning berat |
 | Hosting | **Vercel** | Gratis, direkomendasikan panitia, dan karena backend menyatu cuma butuh satu deployment |
 
 **Kenapa Node dan bukan Python/FastAPI:** kalau backend terpisah, harus ada dua layanan hidup bersamaan saat live demo di depan juri. Dengan API Routes Next.js, semuanya jadi satu aplikasi di satu tempat. Satu titik yang bisa gagal, bukan dua.
@@ -428,6 +451,7 @@ Pengerja menyelesaikan pekerjaan
 | Rincian biaya admin | "Harga + biaya admin" di layar kesepakatan. Murni tampilan |
 | Komentar di postingan | Tanya jawab sebelum menawar |
 | Rekap pendapatan | Total penghasilan bulan ini di profil sendiri |
+| **AI Search Assistant** | Kotak pencarian bahasa natural yang diterjemahkan jadi filter terstruktur (tab/kategori/area/harga) — lihat 4.11. LLM cuma menerjemahkan niat, bukan menyortir langsung; filtering/sorting tetap kode deterministik. Wajib ada fallback keyword-match kalau API tidak tersedia |
 
 > **Catatan soal dua label di atas:** "Wajib" dan "Sebaiknya" itu **urutan pemotongan kalau waktu habis**, bukan urutan penting. Semua fitur di kedua daftar tetap dikerjakan. Kalau di satu titik jelas ada yang tidak akan selesai, potong dari daftar Sebaiknya dulu.
 
@@ -483,6 +507,12 @@ Saat presentasi 10 menit di depan juri, kalau modul AI memanggil API secara live
 - Sediakan tombol hapus data di pengaturan akun
 - Halaman profil publik **tidak menampilkan** nomor WhatsApp atau data pribadi lain
 - Tag area tidak menyimpan koordinat presisi
+
+### 11.6 AI Search Assistant: proxy backend wajib, jangan panggil Claude API langsung dari browser
+
+Kalau fitur AI Search Assistant (lihat 4.11) jadi dikerjakan, panggilan ke Claude API **harus** lewat backend/serverless function, bukan langsung dari kode frontend. Kalau API key ditaruh di kode client, siapa pun bisa membacanya lewat DevTools/view-source dan menghabiskan budget $5 credit tim dalam hitungan menit.
+
+Karena scaffold frontend saat ini masih Vite (bukan Next.js seperti rencana di bagian 7 — lihat catatan di bagian 20), opsi paling ringan tanpa migrasi besar: tambah folder `/api` di root project berisi Vercel serverless function (Vercel mendukung ini untuk frontend apa pun, tidak wajib Next.js). Endpoint inilah yang memegang `ANTHROPIC_API_KEY` di environment variable server, menerima query teks dari frontend, memanggil Claude Haiku 4.5 dengan Structured Outputs, lalu mengembalikan JSON filter ke frontend.
 
 ---
 
@@ -562,6 +592,7 @@ Tanggal hari ini saat dokumen ini ditulis: **18 Agustus 2026**. Tersisa 19 hari 
 - Halaman Syarat dan Ketentuan
 - Menyiapkan data contoh untuk demo
 - Slide presentasi babak final
+- **(Opsional, prioritas rendah) Modul AI Search Assistant** (lihat 4.11): endpoint parsing query bahasa natural → filter terstruktur, pakai Claude Haiku 4.5 + fallback keyword-match. Dikerjakan setelah Career Compass dan fitur wajib lain selesai
 
 > **Catatan tentang peran C:** sering dianggap paling ringan, padahal paling menentukan nilai. README bernilai 10 persen, dan data contoh menentukan apakah aplikasi terlihat hidup atau kosong saat dinilai juri.
 
@@ -664,6 +695,7 @@ Bagian ini penting untuk AI yang membaca dokumen ini. Semua di bawah sudah melew
 | **Data contoh untuk demo itu praktik standar** | Guideline tidak meminta bukti pengguna organik. Kalau juri bertanya, jawab jujur bahwa itu data contoh |
 | **Positioning "web cari kerja sampingan anak kuliahan" diterima** | Itu bagus untuk penyebaran dari mulut ke mulut. Pitching ke juri tetap mengangkat satu lapis lebih dalam (portofolio + referensi). Dua lapis penjelasan, bukan kontradiksi |
 | **Platform tidak mengurus CV pengguna** | Menghindari klaim yang tidak bisa dibuktikan ("bikin CV kamu diterima HR"). Yang diklaim cuma yang terlihat di layar |
+| **AI Search Assistant hanya menerjemahkan niat, tidak menggantikan logika filter** | LLM dipakai sesempit mungkin (ekstraksi terstruktur ke JSON filter) supaya murah, cepat, dan gampang di-fallback. Filtering/sorting tetap kode deterministik yang sudah ada. Ke juri, fitur ini diposisikan sebagai "asisten pencarian", bukan "AI job-matcher", supaya tidak tumpang tindih dengan positioning Career Compass. Keputusan diambil 29 Agustus 2026 |
 
 ---
 
@@ -673,3 +705,4 @@ Bagian ini penting untuk AI yang membaca dokumen ini. Semua di bawah sudah melew
 - Siapa di antara tiga anggota tim yang paling kuat di area apa
 - Nama final kategori untuk pekerjaan olah data — **hindari yang bisa jadi pintu joki tugas kuliah**, karena jurinya dosen. Contoh aman: "olah data non-akademik", "analisis data UMKM"
 - Angka pasti ambang minimum transaksi dan persentase biaya admin (tidak mendesak, ini narasi tahap lanjut)
+- **Frontend saat ini berjalan di atas scaffold Vite (Magic Patterns), belum Next.js seperti rencana di bagian 7.** Perlu diputuskan bertiga: migrasi penuh ke Next.js, atau tetap di Vite dan tambah Vercel serverless functions untuk kebutuhan backend (termasuk proxy Claude API untuk AI Search Assistant, lihat 11.6). Belum mendesak selama tim masih fokus membangun frontend
