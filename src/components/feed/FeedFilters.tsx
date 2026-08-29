@@ -1,7 +1,7 @@
 import React from 'react';
 import type { WorkType } from '../../types';
 import { SearchInput } from '../ui/SearchInput';
-import { AREAS, KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../../data/reference';
+import { KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../../data/reference';
 import { cn } from '../../utils/cn';
 
 export type FilterScope = WorkType | 'home';
@@ -14,6 +14,7 @@ interface FeedFiltersProps {
   onCategoryChange: (value: string) => void;
   area: string;
   onAreaChange: (value: string) => void;
+  areaOptions: string[];
   showSearch?: boolean;
 }
 
@@ -25,6 +26,7 @@ export function FeedFilters({
   onCategoryChange,
   area,
   onAreaChange,
+  areaOptions,
   showSearch = true
 }: FeedFiltersProps) {
   const categories =
@@ -33,7 +35,7 @@ export function FeedFilters({
   scope === 'proyek' ?
   PROYEK_CATEGORIES :
   [...KERJA_CEPAT_CATEGORIES, ...PROYEK_CATEGORIES];
-  const showArea = scope !== 'proyek';
+  const showArea = scope !== 'proyek' && areaOptions.length > 0;
 
   const chip = (active: boolean) =>
   cn(
@@ -89,7 +91,7 @@ export function FeedFilters({
             <button type="button" onClick={() => onAreaChange('')} className={chip(!area)}>
               Semua area
             </button>
-            {AREAS.map((item) =>
+            {areaOptions.map((item) =>
           <button
             key={item}
             type="button"

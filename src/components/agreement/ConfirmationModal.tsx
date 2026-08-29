@@ -27,14 +27,18 @@ export function ConfirmationModal({
   const [text, setText] = useState('');
   const [error, setError] = useState('');
 
-  const submit = () => {
+  const submit = async () => {
     if (!text.trim()) {
       setError('Tulis satu kalimat testimoni untuk pekerja.');
       return;
     }
-    confirmCompletion(agreement.id, rating, text.trim());
-    onClose();
-    toast('Pekerjaan dikonfirmasi', 'Testimoni kamu kini menempel di portofolio pekerja.');
+    try {
+      await confirmCompletion(agreement.id, rating, text.trim());
+      onClose();
+      toast('Pekerjaan dikonfirmasi', 'Testimoni kamu kini menempel di portofolio pekerja.');
+    } catch (error) {
+      toast('Gagal mengonfirmasi', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   return (

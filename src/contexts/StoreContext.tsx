@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import type { Agreement, Job, Message, Offer, Role, Thread, User } from '../types';
+import type { Agreement, Job, Message, Offer, Thread, User } from '../types';
 import { users as seedUsers, findUser } from '../data/users';
 import { adminFeeFor } from '../utils/format';
 import { useAuth } from './AuthContext';
@@ -33,15 +33,15 @@ interface StoreValue {
   myOfferForJob: (jobId: string) => Offer | undefined;
   threadForJob: (jobId: string, otherUserId: string) => Thread;
   messagesForThread: (threadId: string) => Promise<Message[]>;
-  createJob: (input: NewJobInput) => Job;
-  submitOffer: (jobId: string, price: number, note: string) => void;
+  createJob: (input: NewJobInput) => Promise<Job>;
+  submitOffer: (jobId: string, price: number, note: string) => Promise<void>;
   selectOffer: (offerId: string) => string;
-  agree: (agreementId: string, role: Role) => void;
-  submitProof: (agreementId: string, note: string, imageUrl?: string) => void;
-  confirmCompletion: (agreementId: string, rating: number, testimonial: string) => void;
-  closeWithoutConfirmation: (agreementId: string) => void;
-  cancelAgreement: (agreementId: string, byUserId: string) => void;
-  reportUnpaid: (agreementId: string) => void;
+  agree: (agreementId: string) => Promise<void>;
+  submitProof: (agreementId: string, note: string, imageUrl?: string) => Promise<void>;
+  confirmCompletion: (agreementId: string, rating: number, testimonial: string) => Promise<void>;
+  closeWithoutConfirmation: (agreementId: string) => Promise<void>;
+  cancelAgreement: (agreementId: string) => Promise<void>;
+  reportUnpaid: (agreementId: string) => Promise<void>;
   sendMessage: (threadId: string, text: string, senderId?: string) => void;
   receiveMessage: (threadId: string, text: string, senderId: string) => void;
 }
@@ -136,31 +136,23 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
         return thread;
       },
 
-      createJob: (input) => {
-        const job: Job = {
-          id: nextId('j'),
-          ...input,
-          slotsFilled: 0,
-          tags: [input.category.toLowerCase()],
-          posterId: currentUser.id,
-          createdAt: new Date().toISOString(),
-          status: 'open'
-        };
-        setJobs((prev) => [job, ...prev]);
-        return job;
+      createJob: async (input) => {
+        try {
+          const job = await api.createJob(input);
+          setJobs((prev) => [job, ...prev]);
+          return job;
+        } catch (error) {
+          throw error;
+        }
       },
 
-      submitOffer: (jobId, price, note) => {
-        const offer: Offer = {
-          id: nextId('o'),
-          jobId,
-          workerId: currentUser.id,
-          price,
-          note,
-          createdAt: new Date().toISOString(),
-          status: 'pending'
-        };
-        setOffers((prev) => [offer, ...prev]);
+      submitOffer: async (jobId, price, note) => {
+        try {
+          const offer = await api.submitOffer(jobId, price, note);
+          setOffers((prev) => [offer, ...prev]);
+        } catch (error) {
+          throw error;
+        }
       },
 
       selectOffer: (offerId) => {
@@ -206,76 +198,61 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
         return agreementId;
       },
 
-      agree: (agreementId, role) => {
-        setAgreements((prev) =>
-        prev.map((item) => {
-          if (item.id !== agreementId) return item;
-          const next = {
-            ...item,
-            clientAgreed: role === 'client' ? true : item.clientAgreed,
-            workerAgreed: role === 'worker' ? true : item.workerAgreed
-          };
-          if (next.clientAgreed && next.workerAgreed && item.status === 'waiting-approval') {
-            return { ...next, status: 'locked', lockedAt: new Date().toISOString() };
-          }
-          return next;
-        })
-        );
+      agree: async (agreementId) => {
+        try {
+          const updated = await api.agree(agreementId);
+          setAgreements((prev) => prev.map((item) => item.id === agreementId ? updated : item));
+        } catch (error) {
+          throw error;
+        }
       },
 
-      submitProof: (agreementId, note, imageUrl) => {
-        setAgreements((prev) =>
-        prev.map((item) =>
-        item.id === agreementId ?
-        {
-          ...item,
-          status: 'waiting-confirmation',
-          proof: { note, imageUrl, submittedAt: new Date().toISOString() }
-        } :
-        item
-        )
-        );
+      submitProof: async (agreementId, note, imageUrl) => {
+        try {
+          const updated = await api.submitProof(agreementId, note, imageUrl);
+          setAgreements((prev) => prev.map((item) => item.id === agreementId ? updated : item));
+        } catch (error) {
+          throw error;
+        }
       },
 
-      confirmCompletion: (agreementId, rating, testimonial) => {
-        const agreement = agreements.find((item) => item.id === agreementId);
-        setAgreements((prev) =>
-        prev.map((item) =>
-        item.id === agreementId ?
-        {
-          ...item,
-          status: 'completed',
-          confirmation: { rating, testimonial, confirmedAt: new Date().toISOString() }
-        } :
-        item
-        )
-        );
-        if (agreement) bumpStat(agreement.workerId, 'completed');
+      confirmCompletion: async (agreementId, rating, testimonial) => {
+        try {
+          const updated = await api.confirmCompletion(agreementId, rating, testimonial);
+          setAgreements((prev) => prev.map((item) => item.id === agreementId ? updated : item));
+          bumpStat(updated.workerId, 'completed');
+        } catch (error) {
+          throw error;
+        }
       },
 
-      closeWithoutConfirmation: (agreementId) => {
-        setAgreements((prev) =>
-        prev.map((item) =>
-        item.id === agreementId ? { ...item, status: 'completed-unconfirmed' } : item
-        )
-        );
+      closeWithoutConfirmation: async (agreementId) => {
+        try {
+          const updated = await api.closeWithoutConfirmation(agreementId);
+          setAgreements((prev) => prev.map((item) => item.id === agreementId ? updated : item));
+        } catch (error) {
+          throw error;
+        }
       },
 
-      cancelAgreement: (agreementId, byUserId) => {
-        setAgreements((prev) =>
-        prev.map((item) =>
-        item.id === agreementId ? { ...item, status: 'cancelled', cancelledBy: byUserId } : item
-        )
-        );
-        bumpStat(byUserId, 'cancelled');
+      cancelAgreement: async (agreementId) => {
+        try {
+          const updated = await api.cancelAgreement(agreementId);
+          setAgreements((prev) => prev.map((item) => item.id === agreementId ? updated : item));
+          if (updated.cancelledBy) bumpStat(updated.cancelledBy, 'cancelled');
+        } catch (error) {
+          throw error;
+        }
       },
 
-      reportUnpaid: (agreementId) => {
-        const agreement = agreements.find((item) => item.id === agreementId);
-        setAgreements((prev) =>
-        prev.map((item) => item.id === agreementId ? { ...item, unpaidReported: true } : item)
-        );
-        if (agreement) bumpStat(agreement.clientId, 'unpaidReports');
+      reportUnpaid: async (agreementId) => {
+        try {
+          const updated = await api.reportUnpaid(agreementId);
+          setAgreements((prev) => prev.map((item) => item.id === agreementId ? updated : item));
+          bumpStat(updated.clientId, 'unpaidReports');
+        } catch (error) {
+          throw error;
+        }
       },
 
       sendMessage: (threadId, text, senderId) => {

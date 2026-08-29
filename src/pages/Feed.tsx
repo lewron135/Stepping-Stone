@@ -67,13 +67,12 @@ export function Feed() {
     return () => window.clearTimeout(timer);
   }, [scope, forcedError]);
 
-  const visible = useMemo(() => {
+  const scopedJobs = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return jobs.
     filter((job) => scope === 'home' ? true : job.type === scope).
     filter((job) => job.status === 'open').
     filter((job) => category ? job.category === category : true).
-    filter((job) => area ? job.area === area : true).
     filter((job) =>
     needle ?
     [job.title, job.scope, job.deliverable, ...job.tags].
@@ -81,9 +80,22 @@ export function Feed() {
     toLowerCase().
     includes(needle) :
     true
-    ).
+    );
+  }, [category, jobs, query, scope]);
+
+  const areaOptions = useMemo(() => {
+    const set = new Set<string>();
+    scopedJobs.forEach((job) => {
+      if (job.area) set.add(job.area);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [scopedJobs]);
+
+  const visible = useMemo(() => {
+    return scopedJobs.
+    filter((job) => area ? job.area === area : true).
     sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [area, category, jobs, query, scope]);
+  }, [area, scopedJobs]);
 
   const activeFilterCount = (category ? 1 : 0) + (area ? 1 : 0);
 
@@ -172,8 +184,9 @@ export function Feed() {
             category={category}
             onCategoryChange={setCategory}
             area={area}
-            onAreaChange={setArea} />
-          
+            onAreaChange={setArea}
+            areaOptions={areaOptions} />
+
           <CareerCompassCard />
         </div>
       </aside>
@@ -205,6 +218,7 @@ export function Feed() {
           onCategoryChange={setCategory}
           area={area}
           onAreaChange={setArea}
+          areaOptions={areaOptions}
           showSearch={false} />
         
       </Modal>

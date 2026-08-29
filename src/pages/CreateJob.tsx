@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { JobPost } from '../components/feed/JobPost';
 import { useStore } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
-import { AREAS, KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../data/reference';
+import { KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../data/reference';
 import { cn } from '../utils/cn';
 
 interface FormState {
@@ -22,6 +22,7 @@ interface FormState {
   deadline: string;
   price: string;
   workers: string;
+  workersCustom: string;
   area: string;
 }
 
@@ -34,6 +35,7 @@ const EMPTY: FormState = {
   deadline: '',
   price: '',
   workers: '1',
+  workersCustom: '',
   area: ''
 };
 
@@ -50,6 +52,7 @@ export function CreateJob() {
   };
 
   const categories = form.type === 'kerja-cepat' ? KERJA_CEPAT_CATEGORIES : PROYEK_CATEGORIES;
+  const slotsTotalValue = Number(form.workers === 'custom' ? form.workersCustom : form.workers);
 
   const previewJob: Job = useMemo(
     () => ({
@@ -61,9 +64,9 @@ export function CreateJob() {
       deliverable: form.deliverable || 'Hasil akhir yang harus diserahkan',
       deadline: form.deadline ? new Date(form.deadline).toISOString() : new Date().toISOString(),
       price: Number(form.price.replace(/\D/g, '')) || 0,
-      slotsTotal: Number(form.workers) || 1,
+      slotsTotal: Number.isInteger(slotsTotalValue) && slotsTotalValue > 0 ? slotsTotalValue : 1,
       slotsFilled: 0,
-      area: form.type === 'kerja-cepat' ? form.area || undefined : undefined,
+      area: form.type === 'kerja-cepat' ? form.area.trim() || undefined : undefined,
       tags: form.category ? [form.category.toLowerCase()] : [],
       posterId: currentUser.id,
       createdAt: new Date().toISOString(),
@@ -72,7 +75,7 @@ export function CreateJob() {
     [currentUser.id, form]
   );
 
-  const submit = () => {
+  const submit = async () => {
     const next: Partial<Record<keyof FormState, string>> = {};
     if (!form.category) next.category = 'Pilih kategori pekerjaan.';
     if (form.title.trim().length < 8) next.title = 'Judul minimal 8 karakter agar jelas di feed.';
@@ -80,24 +83,30 @@ export function CreateJob() {
     if (!form.deliverable.trim()) next.deliverable = 'Hasil akhir wajib diisi.';
     if (!form.deadline) next.deadline = 'Tenggat wajib diisi.';
     if (!Number(form.price.replace(/\D/g, ''))) next.price = 'Isi estimasi harga.';
-    if (form.type === 'kerja-cepat' && !form.area) next.area = 'Pilih area kampus.';
+    if (!Number.isInteger(slotsTotalValue) || slotsTotalValue < 1) {
+      next.workers = 'Isi jumlah pekerja, minimal 1 orang.';
+    }
 
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
-    const job = createJob({
-      type: form.type,
-      category: form.category,
-      title: form.title.trim(),
-      scope: form.scope.trim(),
-      deliverable: form.deliverable.trim(),
-      deadline: new Date(form.deadline).toISOString(),
-      price: Number(form.price.replace(/\D/g, '')),
-      slotsTotal: Number(form.workers) || 1,
-      area: form.type === 'kerja-cepat' ? form.area : undefined
-    });
-    toast('Pekerjaan dipasang', 'Pekerjaan kamu sudah tampil di feed.');
-    navigate(`/pekerjaan/${job.id}`);
+    try {
+      const job = await createJob({
+        type: form.type,
+        category: form.category,
+        title: form.title.trim(),
+        scope: form.scope.trim(),
+        deliverable: form.deliverable.trim(),
+        deadline: new Date(form.deadline).toISOString(),
+        price: Number(form.price.replace(/\D/g, '')),
+        slotsTotal: slotsTotalValue,
+        area: form.type === 'kerja-cepat' && form.area.trim() ? form.area.trim() : undefined
+      });
+      toast('Pekerjaan dipasang', 'Pekerjaan kamu sudah tampil di feed.');
+      navigate(`/pekerjaan/${job.id}`);
+    } catch (error) {
+      toast('Gagal memasang pekerjaan', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   return (
@@ -261,33 +270,46 @@ export function CreateJob() {
               <Field
                 label="Jumlah pekerja"
                 htmlFor="workers"
+                error={errors.workers}
                 hint="Lebih dari satu orang tetap dapat kesepakatan masing-masing.">
-                
+
                 <Select
                   id="workers"
                   value={form.workers}
-                  options={[1, 2, 3, 4, 5].map((value) => ({
-                    value: String(value),
-                    label: `${value} orang`
-                  }))}
+                  invalid={Boolean(errors.workers)}
+                  options={[
+                  ...[1, 2, 3, 4, 5].map((value) => ({ value: String(value), label: `${value} orang` })),
+                  { value: 'custom', label: 'Lainnya (isi sendiri)' }]
+                  }
                   onChange={(event) => set('workers', event.target.value)} />
-                
+
+                {form.workers === 'custom' ?
+                <div className="mt-2">
+                    <Input
+                    id="workers-custom"
+                    type="number"
+                    min={1}
+                    inputMode="numeric"
+                    value={form.workersCustom}
+                    invalid={Boolean(errors.workers)}
+                    placeholder="Contoh: 8"
+                    onChange={(event) => set('workersCustom', event.target.value)} />
+                  </div> :
+                null}
               </Field>
 
               {form.type === 'kerja-cepat' ?
               <Field
-                label="Area kampus"
+                label="Area"
                 htmlFor="area"
-                required
                 error={errors.area}
                 hint="Penanda area umum, bukan lokasi presisi.">
-                
-                  <Select
+
+                  <Input
                   id="area"
                   value={form.area}
                   invalid={Boolean(errors.area)}
-                  placeholder="Pilih area"
-                  options={AREAS.map((item) => ({ value: item, label: item }))}
+                  placeholder="Contoh: Sekitar Kampus, Dekat Stasiun, dll"
                   onChange={(event) => set('area', event.target.value)} />
                 
                 </Field> :

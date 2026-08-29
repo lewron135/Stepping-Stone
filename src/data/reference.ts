@@ -25,16 +25,6 @@ export const PROYEK_CATEGORIES = [
 'Sosial Media'];
 
 
-export const AREAS = [
-'Sekitar Fakultas Teknik',
-'Sekitar Fakultas Ekonomi',
-'Sekitar FISIP',
-'Sekitar Rektorat',
-'Sekitar Asrama Putra',
-'Sekitar Asrama Putri',
-'Sekitar Gerbang Utara'];
-
-
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 

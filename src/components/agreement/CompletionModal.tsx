@@ -24,14 +24,18 @@ export function CompletionModal({ agreement, workType, open, onClose }: Completi
 
   const proofRequired = workType === 'proyek';
 
-  const submit = () => {
+  const submit = async () => {
     if (proofRequired && !image) {
       setError('Proyek wajib menyertakan foto bukti hasil kerja.');
       return;
     }
-    submitProof(agreement.id, note.trim() || 'Pekerjaan selesai.', image);
-    onClose();
-    toast('Bukti terkirim', 'Klien punya 2 hari untuk mengonfirmasi dan memberi testimoni.');
+    try {
+      await submitProof(agreement.id, note.trim() || 'Pekerjaan selesai.', image);
+      onClose();
+      toast('Bukti terkirim', 'Klien punya 2 hari untuk mengonfirmasi dan memberi testimoni.');
+    } catch (error) {
+      toast('Gagal mengirim bukti', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   return (

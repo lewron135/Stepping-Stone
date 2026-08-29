@@ -11,7 +11,6 @@ import {
   MessageSquareIcon,
   PhoneIcon } from
 'lucide-react';
-import type { Role } from '../types';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -26,7 +25,6 @@ import { ConfirmationModal } from '../components/agreement/ConfirmationModal';
 import { useStore } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
 import { fullDate, deadlineLabel, rupiah, timeAgo } from '../utils/format';
-import { cn } from '../utils/cn';
 
 export function AgreementPage() {
   const { agreementId = '' } = useParams();
@@ -39,13 +37,11 @@ export function AgreementPage() {
     currentUser,
     agree,
     cancelAgreement,
-    closeWithoutConfirmation,
     reportUnpaid,
     threadForJob
   } = useStore();
 
   const agreement = agreements.find((item) => item.id === agreementId);
-  const [viewAs, setViewAs] = useState<Role | null>(null);
   const [completionOpen, setCompletionOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -71,28 +67,31 @@ export function AgreementPage() {
   const job = getJob(agreement.jobId);
   const client = getUser(agreement.clientId);
   const worker = getUser(agreement.workerId);
-  const defaultRole: Role = agreement.clientId === currentUser.id ? 'client' : 'worker';
-  const role: Role = viewAs ?? defaultRole;
-  const isBothParties = agreement.clientId === currentUser.id && agreement.workerId === currentUser.id;
-  const agreedByMe = role === 'client' ? agreement.clientAgreed : agreement.workerAgreed;
+  const isClient = currentUser?.id === agreement.clientId;
+  const isWorker = currentUser?.id === agreement.workerId;
+  const agreedByMe = isClient ? agreement.clientAgreed : isWorker ? agreement.workerAgreed : false;
   const locked = ['locked', 'in-progress', 'waiting-confirmation', 'completed', 'completed-unconfirmed'].includes(
     agreement.status
   );
   const workable = agreement.status === 'locked' || agreement.status === 'in-progress';
 
-  const handleAgree = () => {
-    const otherAgreed = role === 'client' ? agreement.workerAgreed : agreement.clientAgreed;
-    agree(agreement.id, role);
-    if (otherAgreed) {
-      toast('Agreement Locked', 'Harga dan tenggat tidak bisa diubah lagi.', 'lock');
-    } else {
-      toast('Persetujuan kamu tercatat', 'Menunggu pihak lain menyetujui.');
+  const handleAgree = async () => {
+    const otherAgreed = isClient ? agreement.workerAgreed : agreement.clientAgreed;
+    try {
+      await agree(agreement.id);
+      if (otherAgreed) {
+        toast('Agreement Locked', 'Harga dan tenggat tidak bisa diubah lagi.', 'lock');
+      } else {
+        toast('Persetujuan kamu tercatat', 'Menunggu pihak lain menyetujui.');
+      }
+    } catch (error) {
+      toast('Gagal menyetujui kesepakatan', 'Terjadi kesalahan, coba lagi sebentar lagi.');
     }
   };
 
   const openChat = () => {
     if (!job) return;
-    const other = role === 'client' ? agreement.workerId : agreement.clientId;
+    const other = isClient ? agreement.workerId : agreement.clientId;
     const thread = threadForJob(job.id, other);
     navigate(`/chat/${thread.id}`);
   };
@@ -185,8 +184,8 @@ export function AgreementPage() {
           }
 
           <section className="mt-7 divide-y divide-line border border-line bg-surface" aria-label="Pihak yang terlibat">
-            {partyRow('Klien', client.name, client.handle, agreement.clientAgreed, client.id === currentUser.id)}
-            {partyRow('Pekerja', worker.name, worker.handle, agreement.workerAgreed, worker.id === currentUser.id)}
+            {partyRow('Klien', client.name, client.handle, agreement.clientAgreed, isClient)}
+            {partyRow('Pekerja', worker.name, worker.handle, agreement.workerAgreed, isWorker)}
           </section>
 
           {agreement.proof ?
@@ -280,69 +279,70 @@ export function AgreementPage() {
 
             <TransactionBreakdown price={agreement.price} adminFee={agreement.adminFee} />
 
+            {isClient || isWorker ?
             <section className="flex flex-col gap-3 border border-line bg-surface p-4">
-              {agreement.status === 'waiting-approval' ?
+                {agreement.status === 'waiting-approval' ?
               agreedByMe ?
               <p className="text-[13px] leading-relaxed text-muted">
-                    Kamu sudah setuju. Menunggu {role === 'client' ? worker.name : client.name}{' '}
-                    menekan Setuju untuk mengunci kesepakatan.
-                  </p> :
+                      Kamu sudah setuju. Menunggu {isClient ? worker.name : client.name}{' '}
+                      menekan Setuju untuk mengunci kesepakatan.
+                    </p> :
 
               <>
-                    <p className="text-[13px] leading-relaxed text-muted">
-                      Dengan menekan Setuju, kamu mengikat harga dan tenggat di atas.
-                    </p>
-                    <Button fullWidth onClick={handleAgree}>
-                      Setuju
-                    </Button>
-                  </> :
+                      <p className="text-[13px] leading-relaxed text-muted">
+                        Dengan menekan Setuju, kamu mengikat harga dan tenggat di atas.
+                      </p>
+                      <Button fullWidth onClick={handleAgree}>
+                        Setuju
+                      </Button>
+                    </> :
 
               null}
 
-              {workable ?
-              role === 'worker' ?
+                {workable ?
+              isWorker ?
               <>
-                    <p className="text-[13px] leading-relaxed text-muted">
-                      Sudah selesai? Unggah bukti supaya klien bisa mengonfirmasi.
-                    </p>
-                    <Button fullWidth onClick={() => setCompletionOpen(true)}>
-                      Tandai Selesai
-                    </Button>
-                  </> :
+                      <p className="text-[13px] leading-relaxed text-muted">
+                        Sudah selesai? Unggah bukti supaya klien bisa mengonfirmasi.
+                      </p>
+                      <Button fullWidth onClick={() => setCompletionOpen(true)}>
+                        Tandai Selesai
+                      </Button>
+                    </> :
 
               <p className="text-[13px] leading-relaxed text-muted">
-                    Menunggu {worker.name} menyerahkan hasil kerja dan bukti.
-                  </p> :
+                      Menunggu {worker.name} menyerahkan hasil kerja dan bukti.
+                    </p> :
 
               null}
 
-              {agreement.status === 'waiting-confirmation' ?
-              role === 'client' ?
+                {agreement.status === 'waiting-confirmation' ?
+              isClient ?
               <>
-                    <p className="text-[13px] leading-relaxed text-muted">
-                      Kamu punya 2 hari untuk mengonfirmasi, memberi rating, dan menulis testimoni.
-                    </p>
-                    <Button fullWidth onClick={() => setConfirmOpen(true)}>
-                      Konfirmasi &amp; beri testimoni
-                    </Button>
-                  </> :
+                      <p className="text-[13px] leading-relaxed text-muted">
+                        Kamu punya 2 hari untuk mengonfirmasi, memberi rating, dan menulis testimoni.
+                      </p>
+                      <Button fullWidth onClick={() => setConfirmOpen(true)}>
+                        Konfirmasi &amp; beri testimoni
+                      </Button>
+                    </> :
 
               <p className="text-[13px] leading-relaxed text-muted">
-                    Bukti sudah terkirim. Menunggu konfirmasi {client.name} dalam 2 hari.
-                  </p> :
+                      Bukti sudah terkirim. Menunggu konfirmasi {client.name} dalam 2 hari.
+                    </p> :
 
               null}
 
-              <Button
+                <Button
                 variant="secondary"
                 fullWidth
                 onClick={openChat}
                 icon={<MessageSquareIcon className="h-3.5 w-3.5" aria-hidden />}>
-                
-                Buka chat pekerjaan
-              </Button>
 
-              {locked ?
+                  Buka chat pekerjaan
+                </Button>
+
+                {locked ?
               <Button
                 variant="tertiary"
                 fullWidth
@@ -350,63 +350,33 @@ export function AgreementPage() {
                 onClick={() =>
                 toast('Nomor WhatsApp dibagikan', 'Chat aplikasi tetap jadi jalur utama kerja.')
                 }>
-                
-                  Bagikan WhatsApp (opsional)
-                </Button> :
+
+                    Bagikan WhatsApp (opsional)
+                  </Button> :
               null}
 
-              {workable || agreement.status === 'waiting-approval' ?
+                {workable || agreement.status === 'waiting-approval' ?
               <Button variant="tertiary" fullWidth onClick={() => setCancelOpen(true)}>
-                  Batalkan kesepakatan
-                </Button> :
+                    Batalkan kesepakatan
+                  </Button> :
               null}
 
-              {role === 'worker' &&
+                {isWorker &&
               !agreement.unpaidReported &&
               ['completed', 'completed-unconfirmed'].includes(agreement.status) ?
               <Button variant="tertiary" fullWidth onClick={() => setReportOpen(true)}>
-                  Laporkan tidak dibayar
-                </Button> :
+                    Laporkan tidak dibayar
+                  </Button> :
               null}
-            </section>
+              </section> :
 
-            {/* Demo aid: this screen has two sides, so the demo can switch perspective. */}
-            {!isBothParties ?
-            <div className="border border-dashed border-line-strong p-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-faint">
-                  Mode demo
+            <section className="border border-dashed border-line-strong bg-surface p-4">
+                <p className="text-[13px] leading-relaxed text-muted">
+                  Kamu tidak terlibat langsung di kesepakatan ini, jadi halaman ini ditampilkan
+                  sebagai tampilan baca saja.
                 </p>
-                <div className="mt-2 flex gap-1.5">
-                  {(['worker', 'client'] as Role[]).map((option) =>
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setViewAs(option)}
-                  className={cn(
-                    'border px-2.5 py-1 text-[12px] font-medium transition-colors duration-150 ease-out',
-                    role === option ?
-                    'border-transparent bg-inverse-bg text-inverse-ink' :
-                    'border-line-strong text-muted hover:text-ink'
-                  )}>
-                  
-                      Sisi {option === 'worker' ? 'pekerja' : 'klien'}
-                    </button>
-                )}
-                </div>
-                {agreement.status === 'waiting-confirmation' ?
-              <button
-                type="button"
-                onClick={() => {
-                  closeWithoutConfirmation(agreement.id);
-                  toast('Selesai (Belum Dikonfirmasi)', 'Tanpa rating dan testimoni.');
-                }}
-                className="mt-2.5 text-left text-[11.5px] text-muted underline transition-colors duration-150 ease-out hover:text-ink">
-                
-                    Lewati 2 hari tanpa respons klien
-                  </button> :
-              null}
-              </div> :
-            null}
+              </section>
+            }
           </div>
         </aside>
       </div>
@@ -438,12 +408,16 @@ export function AgreementPage() {
               Tidak, lanjutkan
             </Button>
             <Button
-            onClick={() => {
-              cancelAgreement(agreement.id, role === 'client' ? client.id : worker.id);
-              setCancelOpen(false);
-              toast('Kesepakatan dibatalkan', 'Jejak pembatalan tercatat di track record.');
+            onClick={async () => {
+              try {
+                await cancelAgreement(agreement.id);
+                setCancelOpen(false);
+                toast('Kesepakatan dibatalkan', 'Jejak pembatalan tercatat di track record.');
+              } catch (error) {
+                toast('Gagal membatalkan kesepakatan', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+              }
             }}>
-            
+
               Ya, batalkan
             </Button>
           </>
@@ -466,12 +440,16 @@ export function AgreementPage() {
               Batal
             </Button>
             <Button
-            onClick={() => {
-              reportUnpaid(agreement.id);
-              setReportOpen(false);
-              toast('Laporan tercatat', 'Laporan tampil di track record klien secara permanen.');
+            onClick={async () => {
+              try {
+                await reportUnpaid(agreement.id);
+                setReportOpen(false);
+                toast('Laporan tercatat', 'Laporan tampil di track record klien secara permanen.');
+              } catch (error) {
+                toast('Gagal mengirim laporan', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+              }
             }}>
-            
+
               Kirim laporan
             </Button>
           </>

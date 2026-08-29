@@ -33,19 +33,22 @@ export function OfferModal({ job, open, onClose }: OfferModalProps) {
 
   if (!job) return null;
 
-  const submit = () => {
+  const submit = async () => {
     const value = Number(price.replace(/\D/g, ''));
     if (!value) {
       setError('Isi harga penawaran kamu.');
       return;
     }
     setSending(true);
-    window.setTimeout(() => {
-      submitOffer(job.id, value, note.trim() || 'Tanpa catatan tambahan.');
-      setSending(false);
+    try {
+      await submitOffer(job.id, value, note.trim() || 'Tanpa catatan tambahan.');
       onClose();
       toast('Penawaran terkirim', 'Klien akan memilih satu penawaran sebelum kesepakatan dibuat.');
-    }, 420);
+    } catch (error) {
+      toast('Gagal mengirim penawaran', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
