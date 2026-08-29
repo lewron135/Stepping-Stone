@@ -84,7 +84,7 @@ export function AgreementPage() {
     const otherAgreed = role === 'client' ? agreement.workerAgreed : agreement.clientAgreed;
     agree(agreement.id, role);
     if (otherAgreed) {
-      toast('🔒 Agreement Locked', 'Harga dan tenggat tidak bisa diubah lagi.', 'lock');
+      toast('Agreement Locked', 'Harga dan tenggat tidak bisa diubah lagi.', 'lock');
     } else {
       toast('Persetujuan kamu tercatat', 'Menunggu pihak lain menyetujui.');
     }
@@ -199,7 +199,7 @@ export function AgreementPage() {
               <img
                 src={agreement.proof.imageUrl}
                 alt="Bukti hasil pekerjaan"
-                className="max-h-80 w-full object-cover grayscale" /> :
+                className="max-h-80 w-full object-cover" /> :
 
               null}
                 <div className="px-4 py-3">

@@ -14,7 +14,7 @@ export function PortfolioCard({ item }: {item: PortfolioItem;}) {
       <img
         src={item.proofImage}
         alt={`Bukti hasil kerja: ${item.title}`}
-        className="aspect-[4/3] w-full object-cover grayscale" />
+        className="aspect-[4/3] w-full object-cover" />
       
       <div className="flex flex-1 flex-col p-4">
         <div className="flex items-center gap-2">
