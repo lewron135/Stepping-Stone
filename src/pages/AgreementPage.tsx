@@ -23,6 +23,7 @@ import { TransactionBreakdown } from '../components/agreement/TransactionBreakdo
 import { CompletionModal } from '../components/agreement/CompletionModal';
 import { ConfirmationModal } from '../components/agreement/ConfirmationModal';
 import { useStore } from '../contexts/StoreContext';
+import { useUser } from '../hooks/useUser';
 import { useToast } from '../contexts/ToastContext';
 import { fullDate, deadlineLabel, rupiah, timeAgo } from '../utils/format';
 
@@ -33,7 +34,6 @@ export function AgreementPage() {
   const {
     agreements,
     getJob,
-    getUser,
     currentUser,
     agree,
     cancelAgreement,
@@ -46,6 +46,8 @@ export function AgreementPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const client = useUser(agreement?.clientId);
+  const worker = useUser(agreement?.workerId);
 
   if (!agreement) {
     return (
@@ -65,8 +67,6 @@ export function AgreementPage() {
   }
 
   const job = getJob(agreement.jobId);
-  const client = getUser(agreement.clientId);
-  const worker = getUser(agreement.workerId);
   const isClient = currentUser?.id === agreement.clientId;
   const isWorker = currentUser?.id === agreement.workerId;
   const agreedByMe = isClient ? agreement.clientAgreed : isWorker ? agreement.workerAgreed : false;
@@ -74,6 +74,14 @@ export function AgreementPage() {
     agreement.status
   );
   const workable = agreement.status === 'locked' || agreement.status === 'in-progress';
+
+  if (!client || !worker) {
+    return (
+      <div className="py-10">
+        <p className="text-[13.5px] text-muted">Memuat...</p>
+      </div>);
+
+  }
 
   const handleAgree = async () => {
     const otherAgreed = isClient ? agreement.workerAgreed : agreement.clientAgreed;

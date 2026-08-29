@@ -6,6 +6,7 @@ import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { useStore } from '../../contexts/StoreContext';
+import { useUser } from '../../hooks/useUser';
 import { deadlineLabel, rupiah, timeAgo } from '../../utils/format';
 import { cn } from '../../utils/cn';
 
@@ -16,8 +17,8 @@ interface JobPostProps {
 }
 
 export function JobPost({ job, onOffer, compact }: JobPostProps) {
-  const { getUser, offersForJob, myOfferForJob, currentUser } = useStore();
-  const poster = getUser(job.posterId);
+  const { offersForJob, myOfferForJob, currentUser } = useStore();
+  const poster = useUser(job.posterId);
   const [offerCount, setOfferCount] = useState(0);
 
   useEffect(() => {
@@ -33,6 +34,8 @@ export function JobPost({ job, onOffer, compact }: JobPostProps) {
   const myOffer = myOfferForJob(job.id);
   const isMine = job.posterId === currentUser?.id;
   const multiSlot = job.slotsTotal > 1;
+
+  if (!poster) return null;
 
   return (
     <article className="group px-4 py-5 transition-colors duration-150 ease-out hover:bg-subtle/60 sm:px-5">

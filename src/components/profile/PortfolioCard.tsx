@@ -2,12 +2,11 @@ import React from 'react';
 import type { PortfolioItem } from '../../types';
 import { Badge } from '../ui/Badge';
 import { Rating } from '../ui/Rating';
-import { useStore } from '../../contexts/StoreContext';
+import { useUser } from '../../hooks/useUser';
 import { fullDate, rupiah } from '../../utils/format';
 
 export function PortfolioCard({ item }: {item: PortfolioItem;}) {
-  const { getUser } = useStore();
-  const author = item.testimonial ? getUser(item.testimonial.authorId) : undefined;
+  const author = useUser(item.testimonial?.authorId);
 
   return (
     <article className="flex h-full flex-col border border-line bg-surface">

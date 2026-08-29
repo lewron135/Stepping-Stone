@@ -7,10 +7,11 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useStore } from '../contexts/StoreContext';
+import { useUser } from '../hooks/useUser';
 import { incomingQueue } from '../data/interactions';
 import { clockTime, deadlineLabel, rupiah, timeAgo } from '../utils/format';
 import { cn } from '../utils/cn';
-import type { Agreement, Message } from '../types';
+import type { Agreement, Message, User } from '../types';
 
 const POLL_MS = 2500;
 
@@ -22,6 +23,7 @@ export function Chat() {
     messagesForThread,
     getJob,
     getUser,
+    ensureUser,
     currentUser,
     sendMessage,
     receiveMessage,
@@ -34,6 +36,29 @@ export function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeThread = threads.find((thread) => thread.id === threadId);
+  const activeOtherId = activeThread?.participantIds.find((id) => id !== currentUser.id);
+  const activeOther = useUser(activeOtherId);
+
+  const [otherByThread, setOtherByThread] = useState<Record<string, User>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const ids = threads.
+    map((thread) => thread.participantIds.find((id) => id !== currentUser.id)).
+    filter((id): id is string => Boolean(id));
+    Promise.all(ids.map((id) => ensureUser(id))).then(() => {
+      if (cancelled) return;
+      const next: Record<string, User> = {};
+      ids.forEach((id) => {
+        const user = getUser(id);
+        if (user) next[id] = user;
+      });
+      setOtherByThread(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threads.map((thread) => thread.id).join(','), ensureUser, getUser, currentUser.id]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   useEffect(() => {
@@ -126,8 +151,10 @@ export function Chat() {
       <div className="divide-y divide-line">
         {threads.map((thread) => {
         const job = getJob(thread.jobId);
-        const other = getUser(thread.participantIds.find((id) => id !== currentUser.id) ?? '');
+        const otherId = thread.participantIds.find((id) => id !== currentUser.id);
+        const other = otherId ? otherByThread[otherId] : undefined;
         const last = lastMessageByThread[thread.id];
+        if (!other) return null;
         return (
           <Link
             key={thread.id}
@@ -198,7 +225,15 @@ export function Chat() {
   }
 
   const job = getJob(activeThread.jobId);
-  const other = getUser(activeThread.participantIds.find((id) => id !== currentUser.id) ?? '');
+
+  if (!activeOther) {
+    return (
+      <div className="py-10">
+        <p className="text-[13.5px] text-muted">Memuat...</p>
+      </div>);
+
+  }
+  const other = activeOther;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)]">

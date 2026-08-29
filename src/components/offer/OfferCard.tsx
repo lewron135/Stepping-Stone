@@ -5,7 +5,7 @@ import type { Offer } from '../../types';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { useStore } from '../../contexts/StoreContext';
+import { useUser } from '../../hooks/useUser';
 import { rupiah, timeAgo } from '../../utils/format';
 
 interface OfferCardProps {
@@ -16,8 +16,9 @@ interface OfferCardProps {
 }
 
 export function OfferCard({ offer, canSelect, onSelect, onChat }: OfferCardProps) {
-  const { getUser } = useStore();
-  const worker = getUser(offer.workerId);
+  const worker = useUser(offer.workerId);
+
+  if (!worker) return null;
 
   return (
     <div className="flex flex-col gap-3 py-4">

@@ -1,7 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Agreement, Job, Message, Offer, Thread, User } from '../types';
-import { users as seedUsers, findUser } from '../data/users';
-import { adminFeeFor } from '../utils/format';
+import { users as seedUsers } from '../data/users';
 import { useAuth } from './AuthContext';
 import * as api from '../lib/api';
 
@@ -26,7 +25,8 @@ interface StoreValue {
   agreements: Agreement[];
   threads: Thread[];
   messages: Message[];
-  getUser: (id: string) => User;
+  getUser: (id: string) => User | undefined;
+  ensureUser: (id: string) => Promise<void>;
   getJob: (id: string) => Job | undefined;
   offersForJob: (jobId: string) => Promise<Offer[]>;
   agreementForJob: (jobId: string) => Promise<Agreement | undefined>;
@@ -35,7 +35,7 @@ interface StoreValue {
   messagesForThread: (threadId: string) => Promise<Message[]>;
   createJob: (input: NewJobInput) => Promise<Job>;
   submitOffer: (jobId: string, price: number, note: string) => Promise<void>;
-  selectOffer: (offerId: string) => string;
+  selectOffer: (offerId: string) => Promise<string>;
   agree: (agreementId: string) => Promise<void>;
   submitProof: (agreementId: string, note: string, imageUrl?: string) => Promise<void>;
   confirmCompletion: (agreementId: string, rating: number, testimonial: string) => Promise<void>;
@@ -70,10 +70,17 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
       setLoading(true);
       try {
         if (userId) {
-          const [user, jobsList] = await Promise.all([api.fetchUser(userId), api.fetchJobs()]);
+          const [user, jobsList, offersList, agreementsList] = await Promise.all([
+          api.fetchUser(userId),
+          api.fetchJobs(),
+          api.fetchMyOffers(userId),
+          api.fetchMyAgreements(userId)]
+          );
           if (cancelled) return;
           setCurrentUser(user ?? null);
           setJobs(jobsList);
+          setOffers(offersList);
+          setAgreements(agreementsList);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -86,10 +93,29 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
     };
   }, [userId]);
 
-  const getUser = useCallback(
-    (id: string) => users.find((user) => user.id === id) ?? findUser(id),
-    [users]
-  );
+  const [userCache, setUserCache] = useState<Record<string, User>>({});
+  const userCacheRef = useRef<Record<string, User>>({});
+  const pendingUserFetches = useRef<Map<string, Promise<void>>>(new Map());
+
+  useEffect(() => {
+    userCacheRef.current = userCache;
+  }, [userCache]);
+
+  const ensureUser = useCallback(async (id: string) => {
+    if (userCacheRef.current[id]) return;
+    let pending = pendingUserFetches.current.get(id);
+    if (!pending) {
+      pending = api.fetchUser(id).then((user) => {
+        if (user) setUserCache((prev) => ({ ...prev, [id]: user }));
+      }).finally(() => {
+        pendingUserFetches.current.delete(id);
+      });
+      pendingUserFetches.current.set(id, pending);
+    }
+    await pending;
+  }, []);
+
+  const getUser = useCallback((id: string) => userCache[id], [userCache]);
 
   const bumpStat = useCallback((userId: string, key: keyof User['stats']) => {
     setUsers((prev) =>
@@ -112,6 +138,7 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
       threads,
       messages,
       getUser,
+      ensureUser,
       getJob,
       offersForJob: (jobId) => api.fetchOffersForJob(jobId),
       agreementForJob: (jobId) => api.fetchAgreementForJob(jobId),
@@ -155,47 +182,27 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
         }
       },
 
-      selectOffer: (offerId) => {
-        const offer = offers.find((item) => item.id === offerId);
-        if (!offer) return '';
-        const job = getJob(offer.jobId);
-        if (!job) return '';
-        const agreementId = nextId('a');
-        setOffers((prev) =>
-        prev.map((item) =>
-        item.jobId === offer.jobId ?
-        { ...item, status: item.id === offerId ? 'selected' : 'declined' } :
-        item
-        )
-        );
-        setJobs((prev) =>
-        prev.map((item) =>
-        item.id === job.id ?
-        {
-          ...item,
-          status: 'in-agreement',
-          slotsFilled: Math.min(item.slotsTotal, item.slotsFilled + 1)
-        } :
-        item
-        )
-        );
-        setAgreements((prev) => [
-        {
-          id: agreementId,
-          jobId: job.id,
-          offerId,
-          clientId: job.posterId,
-          workerId: offer.workerId,
-          price: offer.price,
-          adminFee: adminFeeFor(offer.price),
-          deadline: job.deadline,
-          clientAgreed: job.posterId === currentUser.id,
-          workerAgreed: offer.workerId === currentUser.id,
-          status: 'waiting-approval'
-        },
-        ...prev]
-        );
-        return agreementId;
+      selectOffer: async (offerId) => {
+        try {
+          const updated = await api.selectOffer(offerId);
+          setAgreements((prev) => [updated, ...prev.filter((item) => item.id !== updated.id)]);
+          const [refreshedOffers, refreshedJob] = await Promise.all([
+          api.fetchOffersForJob(updated.jobId),
+          api.fetchJob(updated.jobId)]
+          );
+          setOffers((prev) => [
+          ...refreshedOffers,
+          ...prev.filter((item) => item.jobId !== updated.jobId)]
+          );
+          if (refreshedJob) {
+            setJobs((prev) =>
+            prev.map((item) => item.id === refreshedJob.id ? refreshedJob : item)
+            );
+          }
+          return updated.id;
+        } catch (error) {
+          throw error;
+        }
       },
 
       agree: async (agreementId) => {

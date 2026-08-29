@@ -5,6 +5,7 @@ import type { Agreement } from '../../types';
 import { StatusBadge } from '../ui/StatusBadge';
 import { Avatar } from '../ui/Avatar';
 import { useStore } from '../../contexts/StoreContext';
+import { useUser } from '../../hooks/useUser';
 import { deadlineLabel, rupiah } from '../../utils/format';
 
 interface AgreementListCardProps {
@@ -13,11 +14,11 @@ interface AgreementListCardProps {
 }
 
 export function AgreementListCard({ agreement, perspective }: AgreementListCardProps) {
-  const { getJob, getUser } = useStore();
+  const { getJob } = useStore();
   const job = getJob(agreement.jobId);
-  const counterpart = getUser(perspective === 'worker' ? agreement.clientId : agreement.workerId);
+  const counterpart = useUser(perspective === 'worker' ? agreement.clientId : agreement.workerId);
 
-  if (!job) return null;
+  if (!job || !counterpart) return null;
 
   return (
     <Link

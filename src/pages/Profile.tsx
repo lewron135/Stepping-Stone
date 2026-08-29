@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BriefcaseIcon, ShieldIcon, UserXIcon } from 'lucide-react';
-import type { PortfolioItem } from '../types';
+import type { PortfolioItem, User } from '../types';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -11,6 +11,7 @@ import { Tabs } from '../components/ui/Tabs';
 import { PortfolioCard } from '../components/profile/PortfolioCard';
 import { TrackRecordStats } from '../components/profile/TrackRecordStats';
 import { useStore } from '../contexts/StoreContext';
+import * as api from '../lib/api';
 import { fullDate } from '../utils/format';
 import { useScreenInit } from '../useScreenInit.js';
 
@@ -19,19 +20,55 @@ type ProfileTab = 'portfolio' | 'track-record';
 export function Profile() {
   const { handle } = useParams();
   const navigate = useNavigate();
-  const { users, currentUser, agreements, getJob } = useStore();
+  const { currentUser, agreements, getJob } = useStore();
   const screenInit = useScreenInit();
   const [tab, setTab] = useState<ProfileTab>(screenInit.tab as ProfileTab ?? 'portfolio');
 
-  const user = handle ? users.find((item) => item.handle === handle) : currentUser;
+  const [fetchedUser, setFetchedUser] = useState<User | null>(null);
+  const [userLoading, setUserLoading] = useState(Boolean(handle));
+
+  useEffect(() => {
+    if (!handle) {
+      setFetchedUser(null);
+      setUserLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setUserLoading(true);
+    setFetchedUser(null);
+    api.
+    fetchUserByHandle(handle).
+    then((result) => {
+      if (!cancelled) setFetchedUser(result ?? null);
+    }).
+    catch(() => {
+      if (!cancelled) setFetchedUser(null);
+    }).
+    finally(() => {
+      if (!cancelled) setUserLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [handle]);
+
+  const user = handle ? fetchedUser : currentUser;
   const isMe = user?.id === currentUser?.id;
+
+  if (handle && userLoading) {
+    return (
+      <div className="py-10">
+        <p className="text-[13.5px] text-muted">Memuat...</p>
+      </div>);
+
+  }
 
   if (!user) {
     return (
       <div className="py-10">
         <EmptyState
           icon={<UserXIcon className="h-6 w-6" aria-hidden />}
-          title="Profil tidak ditemukan"
+          title="Pengguna tidak ditemukan"
           description="Akun ini tidak tersedia atau sudah dihapus."
           action={
           <Button variant="secondary" size="sm" onClick={() => navigate('/home')}>

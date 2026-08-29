@@ -102,6 +102,26 @@ export async function fetchAgreementForJob(jobId: string): Promise<Agreement | u
   return data ? mapAgreement(data) : undefined;
 }
 
+export async function fetchMyOffers(userId: string): Promise<Offer[]> {
+  const { data, error } = await supabase
+    .from('offers')
+    .select('*')
+    .eq('worker_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapOffer);
+}
+
+export async function fetchMyAgreements(userId: string): Promise<Agreement[]> {
+  const { data, error } = await supabase
+    .from('agreements')
+    .select('*')
+    .or(`client_id.eq.${userId},worker_id.eq.${userId}`)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapAgreement);
+}
+
 export async function fetchMessagesForThread(threadId: string): Promise<Message[]> {
   const { data, error } = await supabase
     .from('messages')
@@ -112,25 +132,17 @@ export async function fetchMessagesForThread(threadId: string): Promise<Message[
   return (data ?? []).map(mapMessage);
 }
 
-export async function fetchUser(id: string): Promise<User | undefined> {
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  if (!profile) return undefined;
-
+async function buildUserFromProfile(profile: any): Promise<User> {
   const { data: statsRow } = await supabase
     .from('user_stats')
     .select('*')
-    .eq('user_id', id)
+    .eq('user_id', profile.id)
     .maybeSingle();
 
   const { data: portfolioRows } = await supabase
     .from('user_portfolio')
     .select('*')
-    .eq('user_id', id);
+    .eq('user_id', profile.id);
 
   const portfolio: PortfolioItem[] = (portfolioRows ?? []).map((p: any) => ({
     id: p.agreement_id,
@@ -169,6 +181,28 @@ export async function fetchUser(id: string): Promise<User | undefined> {
     },
     portfolio
   };
+}
+
+export async function fetchUser(id: string): Promise<User | undefined> {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!profile) return undefined;
+  return buildUserFromProfile(profile);
+}
+
+export async function fetchUserByHandle(handle: string): Promise<User | undefined> {
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('handle', handle)
+    .maybeSingle();
+  if (error) throw error;
+  if (!profile) return undefined;
+  return buildUserFromProfile(profile);
 }
 
 export async function createJob(input: NewJobInput): Promise<Job> {

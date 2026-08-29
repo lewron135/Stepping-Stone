@@ -18,6 +18,7 @@ import { OfferCard } from '../components/offer/OfferCard';
 import { OfferModal } from '../components/offer/OfferModal';
 import { TrackRecordStats } from '../components/profile/TrackRecordStats';
 import { useStore } from '../contexts/StoreContext';
+import { useUser } from '../hooks/useUser';
 import { useToast } from '../contexts/ToastContext';
 import { deadlineLabel, fullDate, rupiah, timeAgo } from '../utils/format';
 import type { Agreement, Offer } from '../types';
@@ -28,7 +29,6 @@ export function JobDetail() {
   const { toast } = useToast();
   const {
     getJob,
-    getUser,
     currentUser,
     offersForJob,
     myOfferForJob,
@@ -41,6 +41,7 @@ export function JobDetail() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [agreement, setAgreement] = useState<Agreement | undefined>(undefined);
   const job = getJob(jobId);
+  const poster = useUser(job?.posterId);
 
   useEffect(() => {
     if (!job) return;
@@ -73,19 +74,30 @@ export function JobDetail() {
 
   }
 
-  const poster = getUser(job.posterId);
   const myOffer = myOfferForJob(job.id);
   const isClient = job.posterId === currentUser?.id;
+
+  if (!poster) {
+    return (
+      <div className="py-10">
+        <p className="text-[13.5px] text-muted">Memuat...</p>
+      </div>);
+
+  }
 
   const openChat = (otherUserId: string) => {
     const thread = threadForJob(job.id, otherUserId);
     navigate(`/chat/${thread.id}`);
   };
 
-  const handleSelect = (offerId: string) => {
-    const agreementId = selectOffer(offerId);
-    toast('Penawaran dipilih', 'Kesepakatan dibuat. Menunggu persetujuan kedua pihak.');
-    if (agreementId) navigate(`/kesepakatan/${agreementId}`);
+  const handleSelect = async (offerId: string) => {
+    try {
+      const agreementId = await selectOffer(offerId);
+      toast('Penawaran dipilih', 'Kesepakatan dibuat. Menunggu persetujuan kedua pihak.');
+      if (agreementId) navigate(`/kesepakatan/${agreementId}`);
+    } catch (error) {
+      toast('Gagal memilih penawaran', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
   };
 
   return (
