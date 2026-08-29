@@ -21,7 +21,7 @@ export function Rating({ value, onChange, size = 'md', className }: RatingProps)
         <StarIcon
           key={star}
           aria-hidden
-          className={cn(SIZES[size], star <= value ? 'fill-ink text-ink' : 'text-line-strong')} />
+          className={cn(SIZES[size], star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-line-strong')} />
 
         )}
       </span>);
@@ -42,7 +42,7 @@ export function Rating({ value, onChange, size = 'md', className }: RatingProps)
         
           <StarIcon
           aria-hidden
-          className={cn(SIZES[size], star <= value ? 'fill-ink text-ink' : 'text-line-strong')} />
+          className={cn(SIZES[size], star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-line-strong')} />
         
         </button>
       )}

@@ -199,7 +199,7 @@ export function AgreementPage() {
               <img
                 src={agreement.proof.imageUrl}
                 alt="Bukti hasil pekerjaan"
-                className="max-h-80 w-full object-cover grayscale" /> :
+                className="max-h-80 w-full object-cover" /> :
 
               null}
                 <div className="px-4 py-3">
