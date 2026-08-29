@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeftIcon, MessageSquareIcon, SendIcon } from 'lucide-react';
@@ -10,6 +10,7 @@ import { useStore } from '../contexts/StoreContext';
 import { incomingQueue } from '../data/interactions';
 import { clockTime, deadlineLabel, rupiah, timeAgo } from '../utils/format';
 import { cn } from '../utils/cn';
+import type { Agreement, Message } from '../types';
 
 const POLL_MS = 2500;
 
@@ -33,10 +34,62 @@ export function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeThread = threads.find((thread) => thread.id === threadId);
-  const messages = useMemo(
-    () => activeThread ? messagesForThread(activeThread.id) : [],
-    [activeThread, messagesForThread]
-  );
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  useEffect(() => {
+    if (!activeThread) {
+      setMessages([]);
+      return;
+    }
+    let cancelled = false;
+    messagesForThread(activeThread.id).then((list) => {
+      if (!cancelled) setMessages(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeThread, messagesForThread]);
+
+  const [lastMessageByThread, setLastMessageByThread] = useState<Record<string, Message>>({});
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      threads.map((thread) =>
+      messagesForThread(thread.id).then((list) => [thread.id, list[list.length - 1]] as const)
+      )
+    ).then((entries) => {
+      if (cancelled) return;
+      const next: Record<string, Message> = {};
+      entries.forEach(([id, msg]) => {
+        if (msg) next[id] = msg;
+      });
+      setLastMessageByThread(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threads.map((thread) => thread.id).join(','), messagesForThread]);
+
+  const [agreement, setAgreement] = useState<Agreement | undefined>(undefined);
+  useEffect(() => {
+    if (!activeThread) {
+      setAgreement(undefined);
+      return;
+    }
+    const activeJob = getJob(activeThread.jobId);
+    if (!activeJob) {
+      setAgreement(undefined);
+      return;
+    }
+    let cancelled = false;
+    agreementForJob(activeJob.id).then((item) => {
+      if (!cancelled) setAgreement(item);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeThread, getJob, agreementForJob]);
 
   // Polling: chat refreshes every few seconds instead of a live socket.
   useEffect(() => {
@@ -74,8 +127,7 @@ export function Chat() {
         {threads.map((thread) => {
         const job = getJob(thread.jobId);
         const other = getUser(thread.participantIds.find((id) => id !== currentUser.id) ?? '');
-        const threadMessages = messagesForThread(thread.id);
-        const last = threadMessages[threadMessages.length - 1];
+        const last = lastMessageByThread[thread.id];
         return (
           <Link
             key={thread.id}
@@ -147,7 +199,6 @@ export function Chat() {
 
   const job = getJob(activeThread.jobId);
   const other = getUser(activeThread.participantIds.find((id) => id !== currentUser.id) ?? '');
-  const agreement = job ? agreementForJob(job.id) : undefined;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)]">

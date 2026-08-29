@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClockIcon, MapPinIcon, PackageIcon, UsersIcon } from 'lucide-react';
 import type { Job } from '../../types';
@@ -18,9 +18,20 @@ interface JobPostProps {
 export function JobPost({ job, onOffer, compact }: JobPostProps) {
   const { getUser, offersForJob, myOfferForJob, currentUser } = useStore();
   const poster = getUser(job.posterId);
-  const offerCount = offersForJob(job.id).length;
+  const [offerCount, setOfferCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    offersForJob(job.id).then((list) => {
+      if (!cancelled) setOfferCount(list.length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job.id, offersForJob]);
+
   const myOffer = myOfferForJob(job.id);
-  const isMine = job.posterId === currentUser.id;
+  const isMine = job.posterId === currentUser?.id;
   const multiSlot = job.slotsTotal > 1;
 
   return (

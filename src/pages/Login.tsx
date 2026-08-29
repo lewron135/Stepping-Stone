@@ -5,6 +5,7 @@ import { Field } from '../components/ui/Field';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface FormErrors {
   email?: string;
@@ -14,6 +15,7 @@ interface FormErrors {
 export function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,16 +39,20 @@ export function Login() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
-    window.setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await signIn(email, password);
       toast('Berhasil masuk', `Selamat datang kembali, ${email.split('@')[0]}.`);
       navigate('/home');
-    }, 550);
+    } catch (err: any) {
+      setErrors({ password: 'Email atau kata sandi salah.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -69,12 +75,12 @@ export function Login() {
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="mt-8 flex flex-col gap-5">
-            <Field label="Email kampus" htmlFor="login-email" required error={errors.email}>
+            <Field label="Email" htmlFor="login-email" required error={errors.email}>
               <Input
                 id="login-email"
                 type="email"
                 autoComplete="email"
-                placeholder="nama@kampus.ac.id"
+                placeholder="nama@email.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 invalid={Boolean(errors.email)}

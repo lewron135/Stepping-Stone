@@ -24,7 +24,7 @@ export function Profile() {
   const [tab, setTab] = useState<ProfileTab>(screenInit.tab as ProfileTab ?? 'portfolio');
 
   const user = handle ? users.find((item) => item.handle === handle) : currentUser;
-  const isMe = user?.id === currentUser.id;
+  const isMe = user?.id === currentUser?.id;
 
   if (!user) {
     return (

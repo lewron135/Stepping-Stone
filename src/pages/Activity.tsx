@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { InboxIcon } from 'lucide-react';
 import { Tabs } from '../components/ui/Tabs';
@@ -57,6 +57,21 @@ export function Activity() {
   const myPostedJobs = jobs.filter(
     (job) => job.posterId === currentUser.id && job.status === 'open'
   );
+
+  const [offerCounts, setOfferCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      myPostedJobs.map((job) => offersForJob(job.id).then((list) => [job.id, list.length] as const))
+    ).then((entries) => {
+      if (!cancelled) setOfferCounts(Object.fromEntries(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myPostedJobs.map((job) => job.id).join(','), offersForJob]);
 
   const empty = (title: string, description: string) =>
   <EmptyState icon={<InboxIcon className="h-5 w-5" aria-hidden />} title={title} description={description} />;
@@ -181,7 +196,7 @@ export function Activity() {
                     </div>
                     <Link to={`/pekerjaan/${job.id}`}>
                       <Button size="sm" variant="secondary">
-                        {offersForJob(job.id).length} penawaran
+                        {offerCounts[job.id] ?? 0} penawaran
                       </Button>
                     </Link>
                   </li>

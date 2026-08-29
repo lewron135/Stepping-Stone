@@ -5,6 +5,7 @@ import { Field } from '../components/ui/Field';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface FormValues {
   name: string;
@@ -34,6 +35,7 @@ const INITIAL_VALUES: FormValues = {
 export function SignUp() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
 
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,16 +71,26 @@ export function SignUp() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
-    window.setTimeout(() => {
-      setSubmitting(false);
+    try {
+      await signUp(values.email, values.password, {
+        name: values.name,
+        campus: values.campus
+      });
       toast('Akun berhasil dibuat', `Selamat datang, ${values.name.split(' ')[0]}.`);
       navigate('/home');
-    }, 550);
+    } catch (err: any) {
+      const message = err?.message?.includes('already registered')
+        ? 'Email ini sudah terdaftar. Coba masuk saja.'
+        : 'Gagal mendaftar. Coba lagi sebentar lagi.';
+      setErrors({ email: message });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

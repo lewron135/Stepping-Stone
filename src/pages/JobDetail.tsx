@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeftIcon,
@@ -20,6 +20,7 @@ import { TrackRecordStats } from '../components/profile/TrackRecordStats';
 import { useStore } from '../contexts/StoreContext';
 import { useToast } from '../contexts/ToastContext';
 import { deadlineLabel, fullDate, rupiah, timeAgo } from '../utils/format';
+import type { Agreement, Offer } from '../types';
 
 export function JobDetail() {
   const { jobId = '' } = useParams();
@@ -37,7 +38,23 @@ export function JobDetail() {
   } = useStore();
 
   const [offerOpen, setOfferOpen] = useState(false);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [agreement, setAgreement] = useState<Agreement | undefined>(undefined);
   const job = getJob(jobId);
+
+  useEffect(() => {
+    if (!job) return;
+    let cancelled = false;
+    offersForJob(job.id).then((list) => {
+      if (!cancelled) setOffers(list);
+    });
+    agreementForJob(job.id).then((item) => {
+      if (!cancelled) setAgreement(item);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [job, offersForJob, agreementForJob]);
 
   if (!job) {
     return (
@@ -57,10 +74,8 @@ export function JobDetail() {
   }
 
   const poster = getUser(job.posterId);
-  const offers = offersForJob(job.id);
   const myOffer = myOfferForJob(job.id);
-  const agreement = agreementForJob(job.id);
-  const isClient = job.posterId === currentUser.id;
+  const isClient = job.posterId === currentUser?.id;
 
   const openChat = (otherUserId: string) => {
     const thread = threadForJob(job.id, otherUserId);

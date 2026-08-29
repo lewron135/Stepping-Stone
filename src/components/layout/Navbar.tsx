@@ -69,6 +69,7 @@ export function Navbar({ onOpenMenu }: {onOpenMenu: () => void;}) {
             }
           </IconButton>
           <div className="hidden sm:block">
+            {currentUser ?
             <Dropdown
               label="Menu profil"
               trigger={<Avatar name={currentUser.name} size="sm" />}
@@ -77,8 +78,17 @@ export function Navbar({ onOpenMenu }: {onOpenMenu: () => void;}) {
               { label: 'Aktivitas Saya', onSelect: () => navigate('/aktivitas') },
               { label: 'Settings', onSelect: () => navigate('/pengaturan') },
               { label: 'Logout', onSelect: () => navigate('/') }]
-              } />
-            
+              } /> :
+
+            <div className="flex items-center gap-3">
+                <Link to="/masuk" className="text-sm font-medium text-muted hover:text-ink">
+                  Masuk
+                </Link>
+                <Link to="/daftar" className="text-sm font-semibold text-ink hover:opacity-70">
+                  Daftar
+                </Link>
+              </div>
+            }
           </div>
           <IconButton label="Buka menu" onClick={onOpenMenu}>
             <MenuIcon className="h-[18px] w-[18px]" aria-hidden />

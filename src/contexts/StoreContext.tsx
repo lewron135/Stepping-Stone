@@ -1,15 +1,9 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Agreement, Job, Message, Offer, Role, Thread, User } from '../types';
 import { users as seedUsers, findUser } from '../data/users';
-import { jobs as seedJobs } from '../data/jobs';
-import {
-  agreements as seedAgreements,
-  messages as seedMessages,
-  offers as seedOffers,
-  threads as seedThreads } from
-'../data/interactions';
-import { CURRENT_USER_ID } from '../data/reference';
 import { adminFeeFor } from '../utils/format';
+import { useAuth } from './AuthContext';
+import * as api from '../lib/api';
 
 export interface NewJobInput {
   type: Job['type'];
@@ -24,7 +18,8 @@ export interface NewJobInput {
 }
 
 interface StoreValue {
-  currentUser: User;
+  currentUser: User | null;
+  loading: boolean;
   users: User[];
   jobs: Job[];
   offers: Offer[];
@@ -33,11 +28,11 @@ interface StoreValue {
   messages: Message[];
   getUser: (id: string) => User;
   getJob: (id: string) => Job | undefined;
-  offersForJob: (jobId: string) => Offer[];
-  agreementForJob: (jobId: string) => Agreement | undefined;
+  offersForJob: (jobId: string) => Promise<Offer[]>;
+  agreementForJob: (jobId: string) => Promise<Agreement | undefined>;
   myOfferForJob: (jobId: string) => Offer | undefined;
   threadForJob: (jobId: string, otherUserId: string) => Thread;
-  messagesForThread: (threadId: string) => Message[];
+  messagesForThread: (threadId: string) => Promise<Message[]>;
   createJob: (input: NewJobInput) => Job;
   submitOffer: (jobId: string, price: number, note: string) => void;
   selectOffer: (offerId: string) => string;
@@ -57,14 +52,39 @@ let counter = 100;
 const nextId = (prefix: string) => `${prefix}${++counter}`;
 
 export function StoreProvider({ children }: {children: React.ReactNode;}) {
-  const [users, setUsers] = useState<User[]>(seedUsers);
-  const [jobs, setJobs] = useState<Job[]>(seedJobs);
-  const [offers, setOffers] = useState<Offer[]>(seedOffers);
-  const [agreements, setAgreements] = useState<Agreement[]>(seedAgreements);
-  const [threads, setThreads] = useState<Thread[]>(seedThreads);
-  const [messages, setMessages] = useState<Message[]>(seedMessages);
+  const { userId } = useAuth();
 
-  const currentUser = users.find((user) => user.id === CURRENT_USER_ID) ?? users[0];
+  const [users, setUsers] = useState<User[]>(seedUsers);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [agreements, setAgreements] = useState<Agreement[]>([]);
+  const [threads, setThreads] = useState<Thread[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        if (userId) {
+          const [user, jobsList] = await Promise.all([api.fetchUser(userId), api.fetchJobs()]);
+          if (cancelled) return;
+          setCurrentUser(user ?? null);
+          setJobs(jobsList);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const getUser = useCallback(
     (id: string) => users.find((user) => user.id === id) ?? findUser(id),
@@ -84,6 +104,7 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
 
     return {
       currentUser,
+      loading,
       users,
       jobs,
       offers,
@@ -92,11 +113,11 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
       messages,
       getUser,
       getJob,
-      offersForJob: (jobId) => offers.filter((offer) => offer.jobId === jobId),
-      agreementForJob: (jobId) => agreements.find((item) => item.jobId === jobId),
+      offersForJob: (jobId) => api.fetchOffersForJob(jobId),
+      agreementForJob: (jobId) => api.fetchAgreementForJob(jobId),
       myOfferForJob: (jobId) =>
       offers.find((offer) => offer.jobId === jobId && offer.workerId === currentUser.id),
-      messagesForThread: (threadId) => messages.filter((message) => message.threadId === threadId),
+      messagesForThread: (threadId) => api.fetchMessagesForThread(threadId),
 
       threadForJob: (jobId, otherUserId) => {
         const existing = threads.find(
@@ -277,7 +298,7 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
         );
       }
     };
-  }, [agreements, bumpStat, currentUser, getUser, jobs, messages, offers, threads, users]);
+  }, [agreements, bumpStat, currentUser, getUser, jobs, loading, messages, offers, threads, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

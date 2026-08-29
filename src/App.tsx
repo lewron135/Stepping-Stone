@@ -2,7 +2,9 @@ import React from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { StoreProvider } from './contexts/StoreContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AppShell } from './components/layout/AppShell';
 
 import { About } from './pages/About';
@@ -26,6 +28,7 @@ interface AppProps {
 export function App({ defaultTheme = 'light' }: AppProps) {
   return (
     <ThemeProvider defaultTheme={defaultTheme}>
+      <AuthProvider>
       <StoreProvider>
         <ToastProvider>
           <BrowserRouter>
@@ -93,54 +96,66 @@ export function App({ defaultTheme = 'light' }: AppProps) {
               <Route
                 path="/pasang-pekerjaan"
                 element={
-                  <AppShell>
-                    <CreateJob />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <CreateJob />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/chat"
                 element={
-                  <AppShell>
-                    <Chat />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Chat />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/chat/:threadId"
                 element={
-                  <AppShell>
-                    <Chat />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Chat />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/kesepakatan/:agreementId"
                 element={
-                  <AppShell>
-                    <AgreementPage />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <AgreementPage />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/aktivitas"
                 element={
-                  <AppShell>
-                    <Activity />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Activity />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/profil"
                 element={
-                  <AppShell>
-                    <Profile />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Profile />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
@@ -156,18 +171,22 @@ export function App({ defaultTheme = 'light' }: AppProps) {
               <Route
                 path="/career-compass"
                 element={
-                  <AppShell>
-                    <CareerCompass />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <CareerCompass />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/pengaturan"
                 element={
-                  <AppShell>
-                    <Settings />
-                  </AppShell>
+                  <ProtectedRoute>
+                    <AppShell>
+                      <Settings />
+                    </AppShell>
+                  </ProtectedRoute>
                 }
               />
 
@@ -182,6 +201,7 @@ export function App({ defaultTheme = 'light' }: AppProps) {
           </BrowserRouter>
         </ToastProvider>
       </StoreProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

@@ -10,7 +10,9 @@ export interface Recommendation {
  * Career Compass logic: recommend projects one step above what the student has
  * already proven. Familiar category + higher value = a stretch worth taking.
  */
-export function recommendJobs(user: User, jobs: Job[], limit = 3): Recommendation[] {
+export function recommendJobs(user: User | null, jobs: Job[], limit = 3): Recommendation[] {
+  if (!user) return [];
+
   const doneCategories = new Set(user.portfolio.map((item) => item.category));
   const topPrice = user.portfolio.reduce((max, item) => Math.max(max, item.price), 0);
 
