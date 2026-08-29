@@ -106,19 +106,19 @@ export function SignUp() {
                 id="signup-name"
                 type="text"
                 autoComplete="name"
-                placeholder="Nama sesuai KTM"
+                placeholder="Nama Lengkap"
                 value={values.name}
                 onChange={update('name')}
                 invalid={Boolean(errors.name)}
               />
             </Field>
 
-            <Field label="Email kampus" htmlFor="signup-email" required error={errors.email}>
+            <Field label="Email " htmlFor="signup-email" required error={errors.email}>
               <Input
                 id="signup-email"
                 type="email"
                 autoComplete="email"
-                placeholder="nama@kampus.ac.id"
+                placeholder="Username@gmail.com"
                 value={values.email}
                 onChange={update('email')}
                 invalid={Boolean(errors.email)}
