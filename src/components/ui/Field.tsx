@@ -34,7 +34,7 @@ export function Field({
       </div>
       {children}
       {error ?
-      <p className="flex items-center gap-1.5 text-[12px] font-medium text-ink">
+      <p className="flex items-center gap-1.5 text-[12px] font-medium text-danger">
           <AlertCircleIcon className="h-3.5 w-3.5" aria-hidden />
           {error}
         </p> :

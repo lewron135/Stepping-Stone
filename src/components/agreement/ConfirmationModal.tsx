@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { Agreement } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Field } from '../ui/Field';

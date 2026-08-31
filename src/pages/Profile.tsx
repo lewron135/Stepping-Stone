@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BriefcaseIcon, ShieldIcon, UserXIcon } from 'lucide-react';
 import type { PortfolioItem, User } from '../types';
@@ -13,7 +13,6 @@ import { TrackRecordStats } from '../components/profile/TrackRecordStats';
 import { useStore } from '../contexts/StoreContext';
 import * as api from '../lib/api';
 import { fullDate } from '../utils/format';
-import { useScreenInit } from '../useScreenInit.js';
 
 type ProfileTab = 'portfolio' | 'track-record';
 
@@ -21,8 +20,7 @@ export function Profile() {
   const { handle } = useParams();
   const navigate = useNavigate();
   const { currentUser, agreements, getJob } = useStore();
-  const screenInit = useScreenInit();
-  const [tab, setTab] = useState<ProfileTab>(screenInit.tab as ProfileTab ?? 'portfolio');
+  const [tab, setTab] = useState<ProfileTab>('portfolio');
 
   const [fetchedUser, setFetchedUser] = useState<User | null>(null);
   const [userLoading, setUserLoading] = useState(Boolean(handle));
@@ -55,35 +53,16 @@ export function Profile() {
   const user = handle ? fetchedUser : currentUser;
   const isMe = user?.id === currentUser?.id;
 
-  if (handle && userLoading) {
-    return (
-      <div className="py-10">
-        <p className="text-[13.5px] text-muted">Memuat...</p>
-      </div>);
+  // Semua hook dipanggil sebelum early return di bawah. Sebelumnya useMemo portfolio ada di
+  // bawah dua early return, jadi urutan hook berubah antar render dan React bisa error.
+  const myAgreements = useMemo(
+    () => user ? agreements.filter((item) => item.workerId === user.id) : [],
+    [agreements, user]
+  );
 
-  }
-
-  if (!user) {
-    return (
-      <div className="py-10">
-        <EmptyState
-          icon={<UserXIcon className="h-6 w-6" aria-hidden />}
-          title="Pengguna tidak ditemukan"
-          description="Akun ini tidak tersedia atau sudah dihapus."
-          action={
-          <Button variant="secondary" size="sm" onClick={() => navigate('/home')}>
-              Kembali ke feed
-            </Button>
-          } />
-        
-      </div>);
-
-  }
-
-  const myAgreements = agreements.filter((item) => item.workerId === user.id);
-
-  // Portfolio grows from real completed work with a testimonial.
+  // Portofolio tumbuh dari pekerjaan selesai yang punya testimoni.
   const portfolio: PortfolioItem[] = useMemo(() => {
+    if (!user) return [];
     const earned = myAgreements.
     filter((item) => item.status === 'completed' && item.confirmation).
     map((item) => {
@@ -113,17 +92,46 @@ export function Profile() {
 
     const seededIds = new Set(user.portfolio.map((item) => item.title));
     return [...earned.filter((item) => !seededIds.has(item.title)), ...user.portfolio];
-  }, [getJob, myAgreements, user.portfolio]);
+  }, [getJob, myAgreements, user]);
 
-  const records = myAgreements.
-  filter((item) =>
-  ['completed', 'completed-unconfirmed', 'cancelled'].includes(item.status)
-  ).
-  sort(
-    (a, b) =>
-    new Date(b.confirmation?.confirmedAt ?? b.deadline).getTime() -
-    new Date(a.confirmation?.confirmedAt ?? a.deadline).getTime()
+  const records = useMemo(
+    () =>
+    myAgreements.
+    filter((item) =>
+    ['completed', 'completed-unconfirmed', 'cancelled'].includes(item.status)
+    ).
+    sort(
+      (a, b) =>
+      new Date(b.confirmation?.confirmedAt ?? b.deadline).getTime() -
+      new Date(a.confirmation?.confirmedAt ?? a.deadline).getTime()
+    ),
+    [myAgreements]
   );
+
+  if (handle && userLoading) {
+    return (
+      <div className="py-10">
+        <p className="text-[13.5px] text-muted">Memuat...</p>
+      </div>);
+
+  }
+
+  if (!user) {
+    return (
+      <div className="py-10">
+        <EmptyState
+          icon={<UserXIcon className="h-6 w-6" aria-hidden />}
+          title="Pengguna tidak ditemukan"
+          description="Akun ini tidak tersedia atau sudah dihapus."
+          action={
+          <Button variant="secondary" size="sm" onClick={() => navigate('/home')}>
+              Kembali ke feed
+            </Button>
+          } />
+
+      </div>);
+
+  }
 
   return (
     <div className="py-6">

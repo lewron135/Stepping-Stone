@@ -7,8 +7,8 @@ import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { AgreementListCard } from '../components/agreement/AgreementListCard';
 import { useStore } from '../contexts/StoreContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { deadlineLabel, rupiah, timeAgo } from '../utils/format';
-import { useScreenInit } from '../useScreenInit.js';
 
 type Perspective = 'worker' | 'client';
 
@@ -34,11 +34,9 @@ function Section({
 
 export function Activity() {
   const navigate = useNavigate();
-  const { agreements, offers, jobs, currentUser, getJob, offersForJob } = useStore();
-  const screenInit = useScreenInit();
-  const [perspective, setPerspective] = useState<Perspective>(
-    screenInit.perspective as Perspective ?? 'worker'
-  );
+  const { agreements, offers, jobs, getJob, offersForJob } = useStore();
+  const currentUser = useCurrentUser();
+  const [perspective, setPerspective] = useState<Perspective>('worker');
 
   const mine = agreements.filter((item) =>
   perspective === 'worker' ? item.workerId === currentUser.id : item.clientId === currentUser.id

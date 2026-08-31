@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { Agreement, WorkType } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Field } from '../ui/Field';
@@ -6,6 +6,7 @@ import { Textarea } from '../ui/Textarea';
 import { Button } from '../ui/Button';
 import { FileUpload } from '../ui/FileUpload';
 import { useStore } from '../../contexts/StoreContext';
+import * as api from '../../lib/api';
 import { useToast } from '../../contexts/ToastContext';
 
 interface CompletionModalProps {
@@ -20,11 +21,13 @@ export function CompletionModal({ agreement, workType, open, onClose }: Completi
   const { toast } = useToast();
   const [note, setNote] = useState('');
   const [image, setImage] = useState<string | undefined>();
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
   const proofRequired = workType === 'proyek';
 
   const submit = async () => {
+    if (uploading) return;
     if (proofRequired && !image) {
       setError('Proyek wajib menyertakan foto bukti hasil kerja.');
       return;
@@ -49,7 +52,9 @@ export function CompletionModal({ agreement, workType, open, onClose }: Completi
           <Button variant="tertiary" onClick={onClose}>
             Batal
           </Button>
-          <Button onClick={submit}>Kirim bukti</Button>
+          <Button onClick={submit} disabled={uploading}>
+            {uploading ? 'Menunggu unggahan...' : 'Kirim bukti'}
+          </Button>
         </>
       }>
       
@@ -66,6 +71,8 @@ export function CompletionModal({ agreement, workType, open, onClose }: Completi
           
           <FileUpload
             value={image}
+            upload={(file) => api.uploadProofImage(file, agreement.id)}
+            onUploadingChange={setUploading}
             onChange={(url) => {
               setImage(url);
               setError('');

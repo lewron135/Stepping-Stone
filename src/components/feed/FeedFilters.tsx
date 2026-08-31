@@ -1,4 +1,3 @@
-import React from 'react';
 import type { WorkType } from '../../types';
 import { SearchInput } from '../ui/SearchInput';
 import { KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../../data/reference';

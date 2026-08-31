@@ -262,3 +262,34 @@ Sesuai catatan masterplan bagian 11.3, alur ini butuh dua akun aktif bersamaan u
 - Asumsi soal logika `agree_to_agreement` (lihat bagian 1) belum terverifikasi karena tidak ada akses ke source RPC yang sudah ada. Ini jadi langkah pertama yang wajib diuji sebelum melanjutkan sisa implementasi.
 - Asumsi soal `close_without_confirmation` sudah divalidasi ulang syaratnya di server (lihat bagian 4), sama-sama belum terverifikasi dari kode.
 - Semua perubahan skema dijalankan manual oleh Josep di SQL Editor Supabase. Tidak ada rollback otomatis kalau ada kesalahan di satu langkah; migrasi akan dipecah jadi urutan kecil (tabel dulu, lalu trigger double-agree, lalu trigger notifikasi) supaya gampang diverifikasi satu-satu.
+
+---
+
+## Catatan implementasi (2026-08-31)
+
+Spec ini sudah diimplementasikan. Ada dua penambahan di luar desain awal, keduanya untuk
+menghapus asumsi yang di bagian "Risiko dan asumsi terbuka" ditandai belum terverifikasi.
+Karena source RPC yang sudah berjalan tidak ada di repo, asumsi itu tidak bisa dibuktikan dari
+kode, jadi dipilih untuk membuat asumsinya tidak lagi diperlukan.
+
+**1. Trigger `agreement_autolock` (migrasi 0002).** Desain awal bergantung pada asumsi bahwa
+`agree_to_agreement` mengunci kesepakatan begitu kedua kolom agreed bernilai true. Sebagai
+gantinya, penguncian dipindah ke `before update` di tabel `agreements`. Sekarang satu klik
+Setuju dari pekerja pasti mengunci, apapun isi fungsi RPC-nya. Kalau RPC ternyata memang sudah
+melakukannya sendiri, trigger ini cuma jadi no-op.
+
+**2. Trigger `agreement_timeout_guard` (migrasi 0004).** Desain awal mengasumsikan
+`close_without_confirmation` memvalidasi ulang syarat 2 hari di server. Kalau asumsi itu salah,
+klien yang nakal bisa memanggil RPC tersebut lebih awal lewat console dan menutup kesepakatan
+tanpa memberi rating maupun testimoni ke pekerja. Trigger ini menolak transisi ke
+`completed-unconfirmed` kalau statusnya bukan `waiting-confirmation`, kalau bukti kerja belum
+ada, atau kalau belum lewat 2 hari sejak bukti dikirim.
+
+**3. Deteksi pelaku tidak lagi memakai `auth.uid()` saja.** Untuk notifikasi `agreement_locked`,
+siapa yang barusan bertindak diturunkan dari perubahan kolom `client_agreed`/`worker_agreed`
+antara `OLD` dan `NEW`, dengan `auth.uid()` cuma sebagai cadangan. Lebih andal karena tetap
+benar walau perubahannya datang dari jalur yang tidak membawa JWT.
+
+File migrasi ada di `supabase/migrations/`, dijalankan berurutan 0001 sampai 0004 lewat SQL
+Editor di dashboard Supabase. Skenario pengujian di bagian "Pengujian" di atas belum dijalankan
+karena butuh dua akun aktif bersamaan.

@@ -17,6 +17,7 @@ export default {
         faint: 'var(--faint)',
         'inverse-bg': 'var(--inverse-bg)',
         'inverse-ink': 'var(--inverse-ink)',
+        danger: 'var(--danger)',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],

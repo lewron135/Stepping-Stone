@@ -151,9 +151,13 @@ Satu postingan bisa membutuhkan lebih dari satu pengerja (contoh: pindahan kos b
 
 Alasannya: tiap orang bisa selesai di waktu berbeda, satu bisa tidak datang, dan tiap orang harus punya jejak sendiri. Kesepakatan gabungan akan merusak seluruh sistem rekam jejak.
 
+**Implementasi input jumlah orang:** dropdown 1–5 + opsi "Lainnya (isi sendiri)" tanpa batas atas — ditambah dari rencana awal atas permintaan tim, supaya bisa lebih dari 5 orang kalau perlu.
+
 ### 4.9 Tag Area
 
-Pilihan **dropdown** lokasi ("Sekitar Fakultas Teknik", "Sekitar Kos Blok C"), **BUKAN GPS atau koordinat**. Hanya relevan di tab Kerja Cepat — pekerjaan desain tidak butuh lokasi.
+**Berubah dari rencana awal.** Semula direncanakan dropdown lokasi tetap per kampus ("Sekitar Fakultas Teknik", "Sekitar Kos Blok C"). Yang dipakai sekarang: **input teks bebas, opsional** ("Contoh: Sekitar Kampus, Dekat Stasiun, dll") — supaya aplikasi tidak terkunci ke satu kampus tertentu. Filter di feed dihitung dinamis dari area yang benar-benar ada di data, bukan daftar hardcode.
+
+Tetap **BUKAN GPS atau koordinat** — cuma penanda area umum. Hanya relevan di tab Kerja Cepat — pekerjaan desain tidak butuh lokasi.
 
 ### 4.10 AI Career Compass (fitur pendukung)
 
@@ -176,7 +180,7 @@ Unggah CV → sistem mengekstrak skill → merekomendasikan pekerjaan di tab Pro
 **Model & biaya:** Claude Haiku 4.5 (`claude-haiku-4-5`), model termurah yang cukup untuk tugas ekstraksi terstruktur seperti ini. Estimasi ±$0,001 per query — dengan budget $5 credit Anthropic yang tim punya, itu ±4.000–5.000 query, jauh lebih dari cukup untuk development sampai demo final.
 
 **Kunci arsitektur (wajib dipatuhi):**
-- API key Anthropic **tidak boleh** ada di kode frontend — harus lewat backend/serverless function (lihat Keputusan Teknis 11.6 dan catatan di bagian 20 soal Next.js vs Vite+serverless).
+- API key Anthropic **tidak boleh** ada di kode frontend — harus lewat backend/serverless function (lihat Keputusan Teknis 11.6 dan catatan di bagian 20 soal opsi Supabase Edge Function/Vercel serverless, karena project settled di Vite tanpa server custom).
 - Trigger saat submit, bukan tiap ketikan (kontrol biaya & UX).
 - Saat demo di depan juri, siapkan beberapa query contoh dengan jawaban yang sudah direkam/di-cache — sama seperti aturan 11.4 untuk Career Compass.
 
@@ -214,125 +218,123 @@ Ada **ambang minimum nilai transaksi**. Di bawah ambang itu bebas biaya, karena 
 
 | Bagian | Teknologi | Alasan |
 |---|---|---|
-| Frontend | **Next.js (React) + Tailwind CSS** | Cepat dibangun, komponen responsif |
-| Backend | **Node.js lewat API Routes Next.js** | Menyatu dengan frontend jadi satu aplikasi, satu bahasa untuk seluruh tim, satu target deploy |
-| Database | **MongoDB (Mongoose)** | Fleksibel untuk struktur postingan yang beda antar kategori |
+| Frontend | **Vite (React) + Tailwind CSS** | Cepat dibangun, komponen responsif. **(Berubah dari rencana awal Next.js — scaffold FE yang dipakai tim dari awal ternyata Vite, bukan Next.js, jadi rencana disesuaikan ke kenyataan alih-alih migrasi besar di tengah waktu sempit)** |
+| Backend | **Tidak ada server custom** — FE (Vite) manggil Supabase langsung + Postgres RPC functions | **Berubah dari rencana awal (Node.js lewat API Routes Next.js).** Karena FE ternyata Vite bukan Next.js, API Routes jadi tidak relevan. Logika bisnis yang butuh ubah beberapa tabel sekaligus secara atomic dipindah ke database function (RPC), dipanggil lewat `supabase.rpc(...)` |
+| Database | **Supabase (Postgres)** | **Berubah dari rencana awal MongoDB.** Skema datanya (jobs/offers/agreements/dst) relasional lewat foreign key, jadi lebih cocok Postgres. Supabase juga sekalian kasih Auth + Storage + Row Level Security bawaan, hemat waktu untuk deadline mepet |
 | AI | **Claude API (Anthropic), model Haiku 4.5** | Ekstraksi skill dari CV (Career Compass) dan, kalau sempat, parsing query bahasa natural jadi filter terstruktur (Search Assistant — lihat 4.11). Dipilih karena tim punya $5 credit Anthropic; Haiku 4.5 murah (±$0,001/panggilan) dan cukup untuk tugas ekstraksi terstruktur, tidak butuh reasoning berat |
-| Hosting | **Vercel** | Gratis, direkomendasikan panitia, dan karena backend menyatu cuma butuh satu deployment |
+| Hosting | **Vercel** | Gratis, direkomendasikan panitia |
 
-**Kenapa Node dan bukan Python/FastAPI:** kalau backend terpisah, harus ada dua layanan hidup bersamaan saat live demo di depan juri. Dengan API Routes Next.js, semuanya jadi satu aplikasi di satu tempat. Satu titik yang bisa gagal, bukan dua.
+**Kenapa gak ada backend/server custom:** Supabase sekaligus jadi database, auth, dan lapisan API (PostgREST otomatis + RPC functions buat logika bisnis) — jadi gak perlu server terpisah yang harus dijaga hidup bersamaan saat live demo di depan juri. Satu dependency eksternal (Supabase), bukan dua layanan yang bisa gagal.
 
 **Aturan lomba terkait teknologi:** framework dan library yang dipakai **wajib dijelaskan peruntukannya di dokumentasi**. Template instan (WordPress, Wix) dilarang.
 
 ---
 
-## 8. RANCANGAN DATA (MongoDB)
+## 8. RANCANGAN DATA (Supabase/Postgres)
 
-Ini kerangka awal, boleh disesuaikan saat implementasi. Yang penting **strukturnya disepakati bertiga di hari pertama** karena semua orang bergantung padanya.
+**Berubah dari rencana awal (MongoDB, lihat bagian 7).** Ini skema yang beneran sudah dijalankan di project Supabase bersama tim — sumber kebenarannya ada di file `supabase/schema.sql` di repo. Testimoni tidak jadi tabel terpisah (masuk ke kolom `agreements.confirmation`), dan chat pakai nama `threads`/`messages`, bukan `conversations`.
 
-### Collection: `users`
+### Tabel: `profiles`
+Data tambahan user, terhubung ke `auth.users` bawaan Supabase (Supabase Auth yang pegang email/password, bukan kolom manual). Baris baru otomatis dibuat lewat trigger saat ada yang daftar.
 ```
-_id
-email             // wajib berdomain kampus
-passwordHash
-nama
-jurusan
-kampus
-skills[]          // hasil ekstraksi CV, boleh kosong
-fotoProfil
-createdAt
+id            -> auth.users.id
+handle
+name
+campus
+faculty
+major
+year
+bio
+skills text[] // hasil ekstraksi CV (Career Compass), boleh kosong
 ```
+**Email TIDAK lagi wajib domain kampus** (lihat bagian 20 lama / catatan di bawah) — bebas Gmail dkk, sesuai keputusan tim supaya aplikasi tidak terkunci ke satu kampus.
 
-### Collection: `jobs` (postingan pekerjaan)
+### Tabel: `jobs` (postingan pekerjaan)
 ```
-_id
-posterId          -> users._id
-tab               // "cepat" | "proyek"
-kategori
-judul
-brief: {
-  lingkupKerja    // wajib
-  hasilAkhir      // wajib
-  tenggat         // wajib
-}
-perkiraanHarga
-tagArea           // hanya untuk tab "cepat", null untuk "proyek"
-slotDibutuhkan    // default 1, bisa lebih untuk pekerjaan banyak orang
-slotTerisi        // dihitung dari jumlah agreements berstatus terkunci/selesai
-status            // "dibuka" | "penuh" | "ditutup"
-createdAt
-```
-
-### Collection: `offers` (penawaran)
-```
-_id
-jobId             -> jobs._id
-pengerjaId        -> users._id
-hargaDitawarkan
-catatan
-status            // "diajukan" | "dipilih" | "ditolak"
-createdAt
+id
+poster_id     -> profiles.id
+type          // "kerja-cepat" | "proyek"
+category
+title
+scope         // lingkup kerja, wajib
+deliverable   // hasil akhir, wajib
+deadline      // tenggat, wajib
+price
+area          // teks bebas, opsional — BUKAN dropdown lagi, lihat bagian 4.9
+tags
+slots_total   // default 1, bisa lebih untuk pekerjaan banyak orang
+slots_filled  // dihitung dari agreement berstatus terkunci/selesai
+status        // "open" | "offer-selected" | "in-agreement" | "closed"
+created_at
 ```
 
-### Collection: `agreements` (kesepakatan — INTI SISTEM)
+### Tabel: `offers` (penawaran)
 ```
-_id
-jobId             -> jobs._id
-offerId           -> offers._id
-pemberiKerjaId    -> users._id
-pengerjaId        -> users._id
-hargaFinal
-biayaAdmin        // tampilan saja, tidak diproses
-tenggat
-status            // lihat daftar status di bawah
-setujuPemberiKerja  // boolean
-setujuPengerja      // boolean
-waktuTerkunci
-waktuDitandaiSelesai
-buktiFoto[]
-dibatalkanOleh    -> users._id, null kalau tidak dibatalkan
-dilaporkanBelumDibayar  // boolean
-createdAt
+id
+job_id        -> jobs.id
+worker_id     -> profiles.id
+price
+note
+status        // "pending" | "selected" | "declined"
+created_at
 ```
 
-**Daftar status agreement:**
-- `menunggu_persetujuan` — satu penawaran dipilih, menunggu kedua pihak setuju
-- `terkunci` — kedua pihak sudah setuju, harga final
-- `selesai` — ditandai selesai dan dikonfirmasi + ada testimoni
-- `selesai_belum_dikonfirmasi` — lewat 2 hari tanpa respon, tanpa rating
-- `batal` — salah satu pihak membatalkan
-
-### Collection: `reviews` (testimoni)
+### Tabel: `agreements` (kesepakatan — INTI SISTEM)
 ```
-_id
-agreementId       -> agreements._id
-penulisId         -> users._id (pemberi kerja)
-targetId          -> users._id (pengerja)
-teks              // satu kalimat
-rating
-createdAt
-```
-
-### Collection: `conversations` (wadah chat)
-```
-_id
-jobId             -> jobs._id
-participantIds[]  // 2 orang
-createdAt
+id
+job_id
+offer_id
+client_id       -> profiles.id
+worker_id       -> profiles.id
+price
+admin_fee       // tampilan saja, tidak diproses — masih hardcode 5% dari harga, lihat bagian 20
+deadline
+client_agreed   // boolean
+worker_agreed   // boolean
+status          // lihat daftar status di bawah
+locked_at
+proof           jsonb  // { imageUrl?, note, submittedAt }
+confirmation    jsonb  // { rating, testimonial, confirmedAt } — testimoni ADA DI SINI, bukan tabel terpisah
+cancelled_by    -> profiles.id, null kalau tidak dibatalkan
+unpaid_reported // boolean
+created_at
 ```
 
-### Collection: `messages` (isi chat)
+**Daftar status agreement (nama kolom Postgres, beda dari istilah bahasa Indonesia di diagram 9.1):**
+- `waiting-approval` — satu penawaran dipilih, menunggu kedua pihak setuju (≈ "menunggu persetujuan")
+- `locked` — kedua pihak sudah setuju, harga final (≈ "terkunci")
+- `in-progress` — sudah terkunci, pengerja belum menandai selesai
+- `waiting-confirmation` — sudah ditandai selesai, menunggu konfirmasi pemberi kerja
+- `completed` — dikonfirmasi + ada testimoni (≈ "selesai")
+- `completed-unconfirmed` — lewat 2 hari tanpa respon, tanpa rating (≈ "selesai belum dikonfirmasi")
+- `cancelled` — salah satu pihak membatalkan (≈ "batal")
+
+### Tabel: `threads` (wadah chat, dulu direncanakan bernama `conversations`)
 ```
-_id
-conversationId    -> conversations._id
-senderId          -> users._id
-teks
-createdAt
+id
+job_id          -> jobs.id
+participant_ids // 2 orang
+created_at
 ```
 
-### Catatan tentang rekam jejak
+### Tabel: `messages` (isi chat)
+```
+id
+thread_id       -> threads.id
+sender_id       -> profiles.id
+text
+created_at
+```
 
-**Jangan disimpan sebagai angka terpisah di collection `users`.** Hitung saja saat dibutuhkan dari collection `agreements` (hitung berapa yang berstatus selesai, batal, dilaporkan). Untuk skala MVP ini jauh lebih sederhana dan menghindari bug data yang tidak sinkron.
+### View (dihitung otomatis, bukan disimpan sebagai kolom)
+- `user_stats` — jumlah selesai/batal/laporan belum dibayar per user (mengganti rencana lama "hitung dari collection agreements saat dibutuhkan" — sekarang dihitung lewat database view, prinsipnya sama: tidak disimpan sebagai angka terpisah yang bisa tidak sinkron)
+- `user_portfolio` — portofolio (agreement yang sudah `completed`) per user
+
+### Fungsi database (RPC) — logika bisnis atomic, dipanggil dari frontend lewat `supabase.rpc(...)`
+`create_job`, `submit_offer`, `select_offer`, `agree_to_agreement`, `submit_proof`, `confirm_completion`, `close_without_confirmation`, `cancel_agreement`, `report_unpaid`, `get_or_create_thread`, `send_message`.
+
+### Row Level Security (RLS)
+Aktif di semua tabel. `jobs` dan `profiles` bisa dibaca publik tanpa login (preview feed & profil publik). Tabel lain dibatasi cuma untuk pihak yang terlibat.
 
 ---
 
@@ -405,7 +407,7 @@ Pengerja menyelesaikan pekerjaan
 | Halaman | Isinya |
 |---|---|
 | **Landing (belum login)** | Nama produk, tagline, penjelasan singkat, **preview feed yang bisa dilihat tanpa login**, tombol Masuk/Daftar |
-| **Daftar / Masuk** | Email (validasi domain kampus), kata sandi, nama, jurusan |
+| **Daftar / Masuk** | Email (bebas, tidak wajib domain kampus — lihat catatan bagian 8), kata sandi, nama, jurusan |
 | **Beranda** | Dua tab (Kerja Cepat / Proyek), pencarian, filter kategori dan area, daftar kartu pekerjaan, tombol "+ Pasang Pekerjaan" |
 | **Form Pasang Pekerjaan** | Tab, kategori, judul, 3 kolom brief wajib, harga, jumlah orang, tag area |
 | **Detail Pekerjaan** | Brief lengkap, profil + rekam jejak pemasang, daftar penawaran, tombol Ajukan Penawaran, chat |
@@ -428,11 +430,11 @@ Pengerja menyelesaikan pekerjaan
 
 | Fitur | Penjelasan |
 |---|---|
-| Daftar & masuk email kampus | Hanya email berdomain kampus, sekaligus memastikan penggunanya mahasiswa |
+| Daftar & masuk | Email bebas (Gmail dkk, **berubah dari rencana awal yang wajib domain kampus** — keputusan tim supaya aplikasi tidak terkunci ke satu kampus, lihat bagian 8) |
 | Dua tab feed | Kerja Cepat dan Proyek, tampil terpisah |
 | Pasang pekerjaan + brief wajib | Lingkup kerja, hasil akhir, tenggat. Tidak boleh judul asal |
 | Slot jumlah orang | Kolom "butuh berapa orang" + status "3/5 terisi" |
-| Cari, filter, tag area | Kata kunci, kategori, dropdown area (bukan GPS) |
+| Cari, filter, tag area | Kata kunci, kategori, area teks bebas opsional (bukan GPS, bukan dropdown lagi — lihat 4.9) |
 | Kunci kesepakatan dua sisi | Penyedia menawar, pemasang memilih, keduanya setuju, terkunci |
 | **Chat dalam aplikasi** | Polling 2–3 detik, bisa dipakai untuk negosiasi sebelum terkunci |
 | Tombol WhatsApp opsional | Muncul setelah terkunci, sebagai pilihan tambahan bukan jalur utama |
@@ -462,7 +464,7 @@ Pengerja menyelesaikan pekerjaan
 | **Scraping situs mana pun** (Jobstreet, menfess, dll) | Guidebook menyebut **pelanggaran hak cipta berujung DISKUALIFIKASI**. Juga melanggar syarat perlindungan data pengguna |
 | **Payment gateway / escrow sungguhan** | Memegang uang orang lain butuh kerja sama payment provider dan tanggung jawab hukum. Tidak realistis dalam waktu tersisa |
 | **WebSocket untuk chat** | Vercel serverless tidak cocok untuk koneksi terbuka lama. Pakai polling (lihat Keputusan Teknis) |
-| **GPS / pelacakan lokasi real time** | Risiko privasi, dan tag area dropdown sudah cukup |
+| **GPS / pelacakan lokasi real time** | Risiko privasi, dan tag area (teks bebas opsional) sudah cukup |
 | Sistem penyelesaian sengketa otomatis | Scope creep. Kalau kedua pihak tidak sepakat, status tetap "terkunci" dan diselesaikan sendiri |
 | Notifikasi push | Tidak dinilai rubrik |
 | Aplikasi mobile | Lombanya Web Development |
@@ -477,7 +479,7 @@ Pengerja menyelesaikan pekerjaan
 
 **Masalah:** Vercel (serverless) tidak cocok untuk WebSocket. Fungsi serverless sifatnya nyala-mati per request, tidak bisa menahan koneksi terbuka lama. Memaksa WebSocket berarti butuh server terpisah yang berjalan terus, atau layanan pihak ketiga (Pusher/Ably) — menambah dependency baru di tengah waktu sempit.
 
-**Solusi:** halaman chat melakukan fetch pesan baru **tiap 2–3 detik**. Tidak butuh infrastruktur baru, cukup collection `messages` biasa di MongoDB.
+**Solusi:** halaman chat melakukan fetch pesan baru **tiap 2–3 detik** (implementasi: ~2,5 detik). Tidak butuh infrastruktur baru, cukup tabel `messages` biasa di Supabase/Postgres (lihat bagian 8).
 
 Bedanya dengan WebSocket cuma beberapa milidetik delay. Di depan juri saat demo, itu tidak kelihatan sama sekali.
 
@@ -512,7 +514,7 @@ Saat presentasi 10 menit di depan juri, kalau modul AI memanggil API secara live
 
 Kalau fitur AI Search Assistant (lihat 4.11) jadi dikerjakan, panggilan ke Claude API **harus** lewat backend/serverless function, bukan langsung dari kode frontend. Kalau API key ditaruh di kode client, siapa pun bisa membacanya lewat DevTools/view-source dan menghabiskan budget $5 credit tim dalam hitungan menit.
 
-Karena scaffold frontend saat ini masih Vite (bukan Next.js seperti rencana di bagian 7 — lihat catatan di bagian 20), opsi paling ringan tanpa migrasi besar: tambah folder `/api` di root project berisi Vercel serverless function (Vercel mendukung ini untuk frontend apa pun, tidak wajib Next.js). Endpoint inilah yang memegang `ANTHROPIC_API_KEY` di environment variable server, menerima query teks dari frontend, memanggil Claude Haiku 4.5 dengan Structured Outputs, lalu mengembalikan JSON filter ke frontend.
+**Sudah diputuskan (lihat bagian 20): frontend tetap Vite, tidak ada server custom.** Karena logika bisnis lain sudah dipindah ke Supabase (Postgres RPC, bukan Next.js API Routes seperti rencana awal di bagian 7), dan RPC Postgres tidak cocok untuk memanggil API eksternal, opsi paling konsisten dengan arsitektur yang sudah ada: **Supabase Edge Function** (atau alternatif: folder `/api` berisi Vercel serverless function, Vercel mendukung ini untuk frontend apa pun tanpa wajib Next.js). Endpoint inilah yang memegang `ANTHROPIC_API_KEY` di environment variable server, menerima query teks dari frontend, memanggil Claude Haiku 4.5 dengan Structured Outputs, lalu mengembalikan JSON filter ke frontend.
 
 ---
 
@@ -557,7 +559,7 @@ Tanggal hari ini saat dokumen ini ditulis: **18 Agustus 2026**. Tersisa 19 hari 
 
 | Periode | Target | Detail |
 |---|---|---|
-| **18–22 Ags** | Fondasi | Setup repo, inisialisasi Next.js, koneksi MongoDB. **Skema database disepakati bertiga di hari pertama.** Autentikasi email kampus. Model data. Form pasang pekerjaan dengan brief wajib |
+| **18–22 Ags** | Fondasi | Setup repo, scaffold Vite, koneksi Supabase (Postgres). **Skema database disepakati bertiga di hari pertama.** Autentikasi (email bebas, tidak dibatasi domain kampus). Model data. Form pasang pekerjaan dengan brief wajib |
 | **23–30 Ags** | Fitur inti | Beranda dua tab, kartu pekerjaan, pencarian, filter. Detail pekerjaan + sistem penawaran. **Layar Kesepakatan dan kunci dua sisi** (jangan ditunda). Chat polling. Alur selesai, bukti foto, testimoni, laporan belum dibayar. Logika slot jumlah orang |
 | **31 Ags–3 Sep** | Pelengkap | Halaman profil, portofolio berkelompok, tautan bagikan. AI Career Compass. Rincian biaya admin, halaman S&K. Uji responsif di HP sungguhan |
 | **4–6 Sep** | Finalisasi | Isi data contoh. Uji seluruh alur dengan dua akun. Tulis README sesuai template. Deploy ke Vercel. **Submit 6 Sep, targetkan siang bukan malam** |
@@ -569,12 +571,12 @@ Tanggal hari ini saat dokumen ini ditulis: **18 Agustus 2026**. Tersisa 19 hari 
 
 ### Orang A — Backend dan Data
 - Skema database dan model data
-- Autentikasi dan validasi email kampus
+- Autentikasi (Supabase Auth, email bebas — tidak dibatasi domain kampus)
 - API untuk jobs, offers, agreements
 - Logika status dan alur kunci dua sisi
 - Logika batas 2 hari dan mekanisme laporan belum dibayar
 - Logika slot jumlah orang (satu job, banyak agreement)
-- Backend chat (collection messages + endpoint polling)
+- Backend chat (tabel `threads`/`messages` + RPC `send_message`, polling dilakukan di sisi klien — tidak ada endpoint custom, lihat bagian 8)
 
 ### Orang B — Frontend dan UI/UX
 - Struktur halaman dan navigasi
@@ -610,7 +612,7 @@ Tanggal hari ini saat dokumen ini ditulis: **18 Agustus 2026**. Tersisa 19 hari 
 |---|---|
 | Tim 2–3 orang | Aman (3 orang) |
 | Maksimal 1 karya per tim | Aman |
-| Tidak pakai template instan (WordPress, Wix) | Aman (Next.js dari nol) |
+| Tidak pakai template instan (WordPress, Wix) | Aman (Vite/React dari nol) |
 | Framework dijelaskan peruntukannya di dokumentasi | **Harus dikerjakan** (masuk README) |
 | Minimal satu SDG dari empat pilihan | Aman (SDG 8, melekat di mekanisme inti) |
 | Karya orisinal, belum pernah menang lomba serupa | Perlu dipastikan sendiri oleh tim |
@@ -701,8 +703,8 @@ Bagian ini penting untuk AI yang membaca dokumen ini. Semua di bawah sudah melew
 
 ## 20. HAL YANG MASIH TERBUKA
 
-- Kampus mana yang jadi target pengguna pertama (menentukan isi dropdown tag area)
+- ~~Kampus mana yang jadi target pengguna pertama (menentukan isi dropdown tag area)~~ — **SELESAI/gugur:** area sekarang input teks bebas (bukan dropdown per-kampus) dan email tidak dibatasi domain kampus, jadi aplikasi memang didesain multi-kampus dari awal (lihat bagian 4.9 dan 8)
 - Siapa di antara tiga anggota tim yang paling kuat di area apa
 - Nama final kategori untuk pekerjaan olah data — **hindari yang bisa jadi pintu joki tugas kuliah**, karena jurinya dosen. Contoh aman: "olah data non-akademik", "analisis data UMKM"
-- Angka pasti ambang minimum transaksi dan persentase biaya admin (tidak mendesak, ini narasi tahap lanjut)
-- **Frontend saat ini berjalan di atas scaffold Vite (Magic Patterns), belum Next.js seperti rencana di bagian 7.** Perlu diputuskan bertiga: migrasi penuh ke Next.js, atau tetap di Vite dan tambah Vercel serverless functions untuk kebutuhan backend (termasuk proxy Claude API untuk AI Search Assistant, lihat 11.6). Belum mendesak selama tim masih fokus membangun frontend
+- Angka pasti ambang minimum transaksi dan persentase biaya admin — **saat ini di-hardcode 5% dari harga** di RPC `select_offer` sebagai asumsi sementara, belum disepakati tim. Kalau mau ditampilkan di layar kesepakatan sebelum demo, pastikan angkanya sudah final
+- ~~Frontend Vite vs migrasi ke Next.js~~ — **SUDAH DIPUTUSKAN:** tetap di Vite. Tidak ada server custom (Next.js API Routes/Vercel serverless functions) yang dibangun — logika bisnis dipindah ke Postgres RPC functions di Supabase (lihat bagian 7 dan 8). **Catatan buat AI Search Assistant (4.11) kalau jadi dikerjakan:** RPC Postgres tidak bisa memanggil API eksternal (Claude API) dengan aman, jadi proxy tetap butuh lapisan terpisah — opsi paling ringan sesuai keputusan ini adalah Supabase Edge Function (bukan Vercel serverless function seperti draf awal 11.6), supaya tetap satu ekosistem dengan Supabase yang sudah dipakai

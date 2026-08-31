@@ -1,9 +1,10 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRightIcon, FileUpIcon, ShieldCheckIcon, Trash2Icon } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useStore } from '../contexts/StoreContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useToast } from '../contexts/ToastContext';
 import { recommendJobs } from '../utils/compass';
 import { deadlineLabel, rupiah } from '../utils/format';
@@ -11,7 +12,8 @@ import { deadlineLabel, rupiah } from '../utils/format';
 const EXTRACTED_SKILLS = ['Adobe Illustrator', 'Manajemen proyek kecil', 'Copywriting singkat'];
 
 export function CareerCompass() {
-  const { currentUser, jobs } = useStore();
+  const { jobs } = useStore();
+  const currentUser = useCurrentUser();
   const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [parsing, setParsing] = useState(false);

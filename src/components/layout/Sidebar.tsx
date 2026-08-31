@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
+  BellIcon,
   CompassIcon,
   FileTextIcon,
   HomeIcon,
@@ -15,11 +16,13 @@ import {
   XIcon } from
 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { cn } from '../../utils/cn';
 
 const LINKS = [
 { to: '/home', label: 'Home', icon: HomeIcon },
-{ to: '/chat', label: 'Chat', icon: MessageSquareIcon },
+{ to: '/notifikasi', label: 'Notifikasi', icon: BellIcon, badge: 'notif' as const },
+{ to: '/chat', label: 'Chat', icon: MessageSquareIcon, badge: 'chat' as const },
 { to: '/aktivitas', label: 'Aktivitas Saya', icon: LayersIcon },
 { to: '/profil', label: 'Profil', icon: UserIcon },
 { to: '/career-compass', label: 'Career Compass', icon: CompassIcon },
@@ -35,6 +38,7 @@ interface SidebarProps {
 export function Sidebar({ open, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+  const { unreadCount, chatUnreadCount } = useNotifications();
 
   useEffect(() => {
     if (!open) return;
@@ -82,24 +86,32 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             </div>
 
             <nav className="flex-1 overflow-y-auto py-2">
-              {LINKS.map(({ to, label, icon: Icon }) =>
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onClose}
-              className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 ease-out',
-                isActive ?
-                'bg-subtle font-semibold text-ink' :
-                'text-muted hover:bg-subtle hover:text-ink'
-              )
-              }>
-              
-                  <Icon className="h-4 w-4" aria-hidden />
-                  {label}
-                </NavLink>
-            )}
+              {LINKS.map(({ to, label, icon: Icon, badge }) => {
+              const count = badge === 'notif' ? unreadCount : badge === 'chat' ? chatUnreadCount : 0;
+              return (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-5 py-3 text-sm transition-colors duration-150 ease-out',
+                    isActive ?
+                    'bg-subtle font-semibold text-ink' :
+                    'text-muted hover:bg-subtle hover:text-ink'
+                  )
+                  }>
+
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                    {label}
+                    {count > 0 ?
+                  <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white">
+                        {count > 9 ? '9+' : count}
+                      </span> :
+                  null}
+                  </NavLink>);
+
+            })}
             </nav>
 
             <div className="border-t border-line px-3 py-3">

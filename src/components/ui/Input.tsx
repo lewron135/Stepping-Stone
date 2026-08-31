@@ -11,7 +11,7 @@ export function Input({ invalid, prefix, className, ...rest }: InputProps) {
     <div
       className={cn(
         'flex items-center border bg-surface transition-colors duration-150 ease-out focus-within:border-ink',
-        invalid ? 'border-ink' : 'border-line-strong'
+        invalid ? 'border-danger' : 'border-line-strong'
       )}>
       
       {prefix ?

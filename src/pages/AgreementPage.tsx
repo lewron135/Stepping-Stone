@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -38,10 +38,30 @@ export function AgreementPage() {
     agree,
     cancelAgreement,
     reportUnpaid,
-    threadForJob
+    threadForJob,
+    ensureAgreement
   } = useStore();
 
   const agreement = agreements.find((item) => item.id === agreementId);
+
+  // Selalu tarik ulang dari server saat halaman dibuka. Dua alasan: kesepakatan yang baru
+  // dibuat pihak lain belum ada di store (semua notifikasi kesepakatan mengarah ke sini),
+  // dan salinan yang sudah ada bisa ketinggalan status setelah pihak lain bertindak.
+  const [lookupDone, setLookupDone] = useState(false);
+  useEffect(() => {
+    if (!agreementId) return;
+    let cancelled = false;
+    setLookupDone(false);
+    ensureAgreement(agreementId).catch(() => {
+      // biarkan, di bawah akan tampil sebagai tidak ditemukan
+    }).finally(() => {
+      if (!cancelled) setLookupDone(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [agreementId, ensureAgreement]);
+
   const [completionOpen, setCompletionOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -50,6 +70,13 @@ export function AgreementPage() {
   const worker = useUser(agreement?.workerId);
 
   if (!agreement) {
+    if (!lookupDone) {
+      return (
+        <div className="py-10">
+          <p className="text-[13.5px] text-muted">Memuat...</p>
+        </div>);
+
+    }
     return (
       <div className="py-10">
         <EmptyState
@@ -177,7 +204,7 @@ export function AgreementPage() {
             
               <LockIcon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
               <div>
-                <p className="text-[15px] font-bold tracking-tight">🔒 Agreement Locked</p>
+                <p className="text-[15px] font-bold tracking-tight">Agreement Locked</p>
                 <p className="mt-1 text-[13px] leading-relaxed opacity-80">
                   Harga {rupiah(agreement.price)} dan tenggat {fullDate(agreement.deadline)} tidak
                   bisa diubah lagi. Klien dan pekerja tercatat, dan pembatalan akan meninggalkan

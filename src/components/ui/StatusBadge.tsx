@@ -1,4 +1,3 @@
-import React from 'react';
 import { LockIcon } from 'lucide-react';
 import type { AgreementStatus } from '../../types';
 import { STATUS_LABEL, STATUS_TONE } from '../../utils/status';

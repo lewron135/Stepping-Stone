@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Job } from '../../types';
 import { Modal } from '../ui/Modal';
 import { Field } from '../ui/Field';

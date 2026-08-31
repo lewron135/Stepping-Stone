@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeftIcon, MessageSquareIcon, SendIcon } from 'lucide-react';
@@ -7,7 +7,9 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { useStore } from '../contexts/StoreContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useUser } from '../hooks/useUser';
+import { useNotifications } from '../hooks/useNotifications';
 import { useToast } from '../contexts/ToastContext';
 import * as api from '../lib/api';
 import { clockTime, deadlineLabel, rupiah, timeAgo } from '../utils/format';
@@ -24,13 +26,19 @@ export function Chat() {
     getJob,
     getUser,
     ensureUser,
-    currentUser,
     sendMessage,
     agreementForJob
   } = useStore();
+  const currentUser = useCurrentUser();
 
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { unreadByThread, markThreadSeen } = useNotifications();
+
+  useEffect(() => {
+    if (threadId) markThreadSeen(threadId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [threadId]);
 
   const activeThread = threads.find((thread) => thread.id === threadId);
   const activeOtherId = activeThread?.participantIds.find((id) => id !== currentUser.id);
@@ -150,6 +158,7 @@ export function Chat() {
         const otherId = thread.participantIds.find((id) => id !== currentUser.id);
         const other = otherId ? otherByThread[otherId] : undefined;
         const last = lastMessageByThread[thread.id];
+        const unread = unreadByThread[thread.id] ?? 0;
         if (!other) return null;
         return (
           <Link
@@ -166,15 +175,25 @@ export function Chat() {
                   <p className="truncate text-[13.5px] font-semibold tracking-tight text-ink">
                     {other.name}
                   </p>
+                  {unread > 0 ?
+                <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white">
+                      {unread > 9 ? '9+' : unread}
+                    </span> :
+                null}
                   {last ?
-                <span className="ml-auto shrink-0 text-[11px] text-faint">
+                <span className={cn('shrink-0 text-[11px] text-faint', unread === 0 && 'ml-auto')}>
                       {timeAgo(last.createdAt)}
                     </span> :
                 null}
                 </div>
                 <p className="truncate text-[12px] text-muted">{job?.title}</p>
                 {last ?
-              <p className="mt-1 truncate text-[12.5px] text-muted">
+              <p
+                className={cn(
+                  'mt-1 truncate text-[12.5px]',
+                  unread > 0 ? 'font-semibold text-ink' : 'text-muted'
+                )}>
+
                     {last.senderId === currentUser.id ? 'Kamu: ' : ''}
                     {last.text}
                   </p> :
