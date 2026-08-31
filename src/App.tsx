@@ -1,5 +1,4 @@
-import React from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -14,6 +13,7 @@ import { Feed } from './pages/Feed';
 import { JobDetail } from './pages/JobDetail';
 import { CreateJob } from './pages/CreateJob';
 import { Chat } from './pages/Chat';
+import { Notifications } from './pages/Notifications';
 import { AgreementPage } from './pages/AgreementPage';
 import { Activity } from './pages/Activity';
 import { Profile } from './pages/Profile';
@@ -25,183 +25,77 @@ interface AppProps {
   defaultTheme?: 'light' | 'dark';
 }
 
+// Dua layout route dipakai supaya pembungkus tidak diulang di setiap halaman: satu untuk
+// halaman aplikasi yang boleh dibuka tanpa login, satu lagi yang menambah ProtectedRoute
+// di atasnya. Halaman publik di paling atas tidak memakai shell sama sekali.
+function ShellLayout() {
+  return (
+    <AppShell>
+      <Outlet />
+    </AppShell>);
+
+}
+
+function ProtectedShellLayout() {
+  return (
+    <ProtectedRoute>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </ProtectedRoute>);
+
+}
+
 export function App({ defaultTheme = 'light' }: AppProps) {
   return (
     <ThemeProvider defaultTheme={defaultTheme}>
       <AuthProvider>
-      <StoreProvider>
-        <ToastProvider>
-          <BrowserRouter>
-            <Routes>
+        <StoreProvider>
+          <ToastProvider>
+            <BrowserRouter>
+              <Routes>
 
-              {/* ==================== PUBLIC PAGES ==================== */}
+                {/* ==================== HALAMAN PUBLIK ==================== */}
 
- <Route path="/" element={<About />} />
+                <Route path="/" element={<About />} />
+                <Route path="/tentang-kami" element={<About />} />
+                <Route path="/syarat-ketentuan" element={<Terms />} />
+                <Route path="/masuk" element={<Login />} />
+                <Route path="/daftar" element={<SignUp />} />
 
-<Route
-  path="/tentang-kami"
-  element={<About />}
-/>
-              <Route
-                path="/syarat-ketentuan"
-                element={<Terms />}
-              />
-              <Route
-                path="/masuk"
-                element={<Login />}
-              />
-              <Route
-                path="/daftar"
-                element={<SignUp />}
-              />
+                {/* ============ HALAMAN APLIKASI, TANPA WAJIB LOGIN ============ */}
 
-              {/* ==================== APP PAGES ==================== */}
+                <Route element={<ShellLayout />}>
+                  <Route path="/home" element={<Feed />} />
+                  <Route path="/kerja-cepat" element={<Feed />} />
+                  <Route path="/proyek" element={<Feed />} />
+                  <Route path="/pekerjaan/:jobId" element={<JobDetail />} />
+                  <Route path="/u/:handle" element={<Profile />} />
+                </Route>
 
-              <Route
-                path="/home"
-                element={
-                  <AppShell>
-                    <Feed />
-                  </AppShell>
-                }
-              />
+                {/* ================ HALAMAN YANG BUTUH LOGIN ================ */}
 
-              <Route
-                path="/kerja-cepat"
-                element={
-                  <AppShell>
-                    <Feed />
-                  </AppShell>
-                }
-              />
+                <Route element={<ProtectedShellLayout />}>
+                  <Route path="/pasang-pekerjaan" element={<CreateJob />} />
+                  <Route path="/chat" element={<Chat />} />
+                  <Route path="/chat/:threadId" element={<Chat />} />
+                  <Route path="/notifikasi" element={<Notifications />} />
+                  <Route path="/kesepakatan/:agreementId" element={<AgreementPage />} />
+                  <Route path="/aktivitas" element={<Activity />} />
+                  <Route path="/profil" element={<Profile />} />
+                  <Route path="/career-compass" element={<CareerCompass />} />
+                  <Route path="/pengaturan" element={<Settings />} />
+                </Route>
 
-              <Route
-                path="/proyek"
-                element={
-                  <AppShell>
-                    <Feed />
-                  </AppShell>
-                }
-              />
+                {/* ==================== FALLBACK ==================== */}
 
-              <Route
-                path="/pekerjaan/:jobId"
-                element={
-                  <AppShell>
-                    <JobDetail />
-                  </AppShell>
-                }
-              />
+                <Route path="*" element={<Navigate to="/" replace />} />
 
-              <Route
-                path="/pasang-pekerjaan"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <CreateJob />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/chat"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <Chat />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/chat/:threadId"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <Chat />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/kesepakatan/:agreementId"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <AgreementPage />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/aktivitas"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <Activity />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/profil"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <Profile />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/u/:handle"
-                element={
-                  <AppShell>
-                    <Profile />
-                  </AppShell>
-                }
-              />
-
-              <Route
-                path="/career-compass"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <CareerCompass />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/pengaturan"
-                element={
-                  <ProtectedRoute>
-                    <AppShell>
-                      <Settings />
-                    </AppShell>
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* ==================== FALLBACK ==================== */}
-
-              <Route
-                path="*"
-                element={<Navigate to="/" replace />}
-              />
-
-            </Routes>
-          </BrowserRouter>
-        </ToastProvider>
-      </StoreProvider>
+              </Routes>
+            </BrowserRouter>
+          </ToastProvider>
+        </StoreProvider>
       </AuthProvider>
-    </ThemeProvider>
-  );
+    </ThemeProvider>);
+
 }

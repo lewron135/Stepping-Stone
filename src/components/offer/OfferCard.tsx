@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { CheckIcon, MessageSquareIcon } from 'lucide-react';
 import type { Offer } from '../../types';

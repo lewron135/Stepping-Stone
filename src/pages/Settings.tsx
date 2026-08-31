@@ -5,7 +5,7 @@ import { Field } from '../components/ui/Field';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Switch } from '../components/ui/Switch';
-import { useStore } from '../contexts/StoreContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { cn } from '../utils/cn';
@@ -41,7 +41,7 @@ function SettingsSection({ title, children }: {title: string;children: React.Rea
 
 export function Settings() {
   const navigate = useNavigate();
-  const { currentUser } = useStore();
+  const currentUser = useCurrentUser();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [publicProfile, setPublicProfile] = useState(true);

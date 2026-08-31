@@ -16,7 +16,7 @@ export function Select({ invalid, options, placeholder, className, ...rest }: Se
         aria-invalid={invalid || undefined}
         className={cn(
           'h-10 w-full appearance-none border bg-surface px-3 pr-9 text-sm text-ink transition-colors duration-150 ease-out focus:border-ink focus:outline-none',
-          invalid ? 'border-ink' : 'border-line-strong',
+          invalid ? 'border-danger' : 'border-line-strong',
           className
         )}>
         

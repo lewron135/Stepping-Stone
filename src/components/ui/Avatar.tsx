@@ -1,4 +1,3 @@
-import React from 'react';
 import { initials } from '../../utils/format';
 import { cn } from '../../utils/cn';
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon } from 'lucide-react';
 import type { Job, WorkType } from '../types';
@@ -9,6 +9,7 @@ import { Select } from '../components/ui/Select';
 import { Textarea } from '../components/ui/Textarea';
 import { JobPost } from '../components/feed/JobPost';
 import { useStore } from '../contexts/StoreContext';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useToast } from '../contexts/ToastContext';
 import { KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../data/reference';
 import { cn } from '../utils/cn';
@@ -41,7 +42,8 @@ const EMPTY: FormState = {
 
 export function CreateJob() {
   const navigate = useNavigate();
-  const { createJob, currentUser } = useStore();
+  const { createJob } = useStore();
+  const currentUser = useCurrentUser();
   const { toast } = useToast();
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});

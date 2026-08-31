@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import type {
-  Agreement, Job, Message, Offer, Thread, User, PortfolioItem } from
+  Agreement, AppNotification, Job, Message, Offer, Thread, User, PortfolioItem } from
 '../types';
 import type { NewJobInput } from '../contexts/StoreContext';
 
@@ -71,6 +71,47 @@ function mapThread(row: any): Thread {
   return { id: row.id, jobId: row.job_id, participantIds: row.participant_ids };
 }
 
+function mapNotification(row: any): AppNotification {
+  return {
+    id: row.id,
+    type: row.type,
+    text: row.text,
+    href: row.href,
+    readAt: row.read_at ?? undefined,
+    createdAt: row.created_at
+  };
+}
+
+// ---------------------------------------------------------------------------------------
+// Bukti kerja (Supabase Storage, bucket dibuat di supabase/migrations/0005).
+// ---------------------------------------------------------------------------------------
+
+const PROOF_BUCKET = 'bukti-kerja';
+
+export const PROOF_MAX_BYTES = 5 * 1024 * 1024;
+export const PROOF_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+// Nama file harus diawali folder berisi id pemiliknya, karena policy RLS di storage.objects
+// mencocokkan folder pertama dengan auth.uid(). Kalau formatnya diubah, unggahan akan ditolak.
+export async function uploadProofImage(file: File, agreementId: string): Promise<string> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('Sesi kamu sudah habis, masuk lagi untuk mengunggah bukti.');
+
+  const dot = file.name.lastIndexOf('.');
+  const extension = dot > 0 ? file.name.slice(dot + 1).toLowerCase() : 'jpg';
+  const path = `${userId}/${agreementId}-${Date.now()}.${extension}`;
+
+  const { error } = await supabase.storage.from(PROOF_BUCKET).upload(path, file, {
+    contentType: file.type,
+    upsert: false
+  });
+  if (error) throw error;
+
+  return supabase.storage.from(PROOF_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
 export async function fetchJobs(): Promise<Job[]> {
   const { data, error } = await supabase
     .from('jobs')
@@ -90,6 +131,41 @@ export async function fetchOffersForJob(jobId: string): Promise<Offer[]> {
   const { data, error } = await supabase.from('offers').select('*').eq('job_id', jobId);
   if (error) throw error;
   return (data ?? []).map(mapOffer);
+}
+
+export async function fetchNotifications(userId: string): Promise<AppNotification[]> {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return (data ?? []).map(mapNotification);
+}
+
+export async function markNotificationsRead(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', userId)
+    .is('read_at', null);
+  if (error) throw error;
+}
+
+export async function dismissNotification(id: string): Promise<void> {
+  const { error } = await supabase.from('notifications').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function fetchAgreement(id: string): Promise<Agreement | undefined> {
+  const { data, error } = await supabase
+    .from('agreements')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapAgreement(data) : undefined;
 }
 
 export async function fetchAgreementForJob(jobId: string): Promise<Agreement | undefined> {
@@ -130,6 +206,22 @@ export async function fetchMyThreads(userId: string): Promise<Thread[]> {
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map(mapThread);
+}
+
+export async function fetchInboundMessages(
+  userId: string,
+  threadIds: string[]
+): Promise<Message[]> {
+  if (threadIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .in('thread_id', threadIds)
+    .neq('sender_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(30);
+  if (error) throw error;
+  return (data ?? []).map(mapMessage);
 }
 
 export async function fetchMessagesForThread(threadId: string): Promise<Message[]> {

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { PortfolioItem } from '../../types';
 import { Badge } from '../ui/Badge';
 import { Rating } from '../ui/Rating';

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { MenuIcon, MoonIcon, PlusIcon, SearchIcon, SunIcon } from 'lucide-react';
 import { Avatar } from '../ui/Avatar';
@@ -90,7 +90,7 @@ export function Navbar({ onOpenMenu }: {onOpenMenu: () => void;}) {
               </div>
             }
           </div>
-          <IconButton label="Buka menu" onClick={onOpenMenu}>
+          <IconButton label="Buka menu" onClick={onOpenMenu} className="lg:hidden">
             <MenuIcon className="h-[18px] w-[18px]" aria-hidden />
           </IconButton>
         </div>

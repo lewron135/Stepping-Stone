@@ -1,4 +1,3 @@
-import React from 'react';
 import { RotateCcwIcon, WifiOffIcon } from 'lucide-react';
 import { Button } from './Button';
 

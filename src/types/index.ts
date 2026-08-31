@@ -119,3 +119,24 @@ export interface Thread {
 }
 
 export type Role = 'worker' | 'client';
+
+export type NotificationType =
+'offer_received' |
+'offer_selected' |
+'agreement_locked' |
+'proof_submitted' |
+'completion_confirmed' |
+'agreement_cancelled' |
+'unpaid_reported' |
+'completion_timeout';
+
+// Dinamai AppNotification, bukan Notification, supaya tidak bentrok dengan tipe Notification
+// bawaan DOM yang ikut terbaca lewat lib "DOM" di tsconfig.
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  text: string;
+  href: string;
+  readAt?: string;
+  createdAt: string;
+}

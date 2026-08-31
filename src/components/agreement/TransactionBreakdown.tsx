@@ -1,4 +1,3 @@
-import React from 'react';
 import { rupiah } from '../../utils/format';
 
 interface TransactionBreakdownProps {

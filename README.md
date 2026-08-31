@@ -3,11 +3,11 @@
   # Stepping Stone
   ### Kerja Kampus, Kesepakatan Jelas, Portofolio Nyata
 
-  [![Live Demo](https://img.shields.io/badge/🚧_Live_Demo-Ongoing-lightgrey?style=for-the-badge)]()
+  [![Live Demo](https://img.shields.io/badge/Live_Demo-Belum_Dirilis-lightgrey?style=for-the-badge)]()
   [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/lewron135/Stepping-Stone)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
-  **Submission for ITECHNO CUP 2026 - Web Development**
+  **Submission untuk ITECHNO CUP 2026 - Web Development**
 
   **By Entar ajadeh**
 
@@ -15,276 +15,303 @@
 
 ---
 
-## 📋 Daftar Isi
-- [Tentang Proyek](#-tentang-proyek)
-- [Fitur Unggulan](#-fitur-unggulan)
-- [Demo & Screenshot](#-demo--screenshot)
-- [Teknologi](#-teknologi)
-- [Arsitektur Sistem](#-arsitektur-sistem)
-- [Instalasi & Setup](#-instalasi--setup)
-- [Penggunaan](#-penggunaan)
-- [API Documentation](#-api-documentation)
-- [Testing](#-testing)
-- [Tim Developer](#-tim-pengembang)
-- [Lisensi](#-lisensi)
+## Daftar Isi
+
+- [Tentang Proyek](#tentang-proyek)
+- [Fitur Unggulan](#fitur-unggulan)
+- [Teknologi](#teknologi)
+- [Arsitektur Sistem](#arsitektur-sistem)
+- [Skema Database](#skema-database)
+- [Instalasi dan Setup](#instalasi-dan-setup)
+- [Penggunaan](#penggunaan)
+- [Keputusan Teknis](#keputusan-teknis)
+- [Status Pengembangan](#status-pengembangan)
+- [Tim Pengembang](#tim-pengembang)
+- [Lisensi](#lisensi)
 
 ---
 
-## 👥 Tim Developer
-
-| Nama | Peran | GitHub |
-|------|-------|--------|
-| **Josep Natanael Pasaribu** | Ongoing | [@lewron135](https://github.com/lewron135) |
-| **Marcellino Varian Saputra** | Ongoing | [@marcellinovs](https://github.com/marcellinovs) |
-| **Stanley Lin** | Ongoing | [@Linneisa](https://github.com/Linneisa) |
-
----
-
-## 🎯 Tentang Proyek
+## Tentang Proyek
 
 ### Latar Belakang
-Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance yang ada terlalu besar dan kompetitif untuk kebutuhan sekecil "titip beli" atau "desain poster acara kampus". Di sisi lain, kerjaan informal antar teman kampus rawan masalah klasik: harga berubah di tengah jalan, tenggat molor tanpa kejelasan, sampai hasil kerja yang sudah selesai tidak dibayar — dan semuanya tidak meninggalkan bukti apa pun untuk portofolio.
+
+Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance yang ada terlalu besar dan kompetitif untuk kebutuhan sekecil "titip beli" atau "desain poster acara kampus". Di sisi lain, kerjaan informal antar teman kampus rawan masalah klasik: harga berubah di tengah jalan, tenggat molor tanpa kejelasan, sampai hasil kerja yang sudah selesai tidak dibayar, dan semuanya tidak meninggalkan bukti apa pun untuk portofolio.
 
 ### Solusi yang Ditawarkan
-**Stepping Stone** adalah forum kerja antar mahasiswa dengan alur yang jelas dari awal sampai akhir: temukan pekerjaan → ajukan penawaran & nego lewat chat → kunci kesepakatan (harga & tenggat tidak bisa berubah lagi) → kerjakan & unggah bukti → dapat testimoni yang otomatis masuk ke portofolio. Setiap transaksi menghasilkan dua hal sekaligus: uang dan bukti pengalaman yang bisa ditunjukkan.
+
+**Stepping Stone** adalah forum kerja antar mahasiswa dengan alur yang jelas dari awal sampai akhir: temukan pekerjaan, ajukan penawaran dan nego lewat chat, kunci kesepakatan (harga dan tenggat tidak bisa berubah lagi), kerjakan dan unggah bukti, lalu dapat testimoni yang otomatis masuk ke portofolio. Setiap transaksi menghasilkan dua hal sekaligus: uang dan bukti pengalaman yang bisa ditunjukkan.
 
 ### Tujuan Proyek
-- 🎯 **Tujuan Utama**: Mempertemukan mahasiswa yang butuh pekerjaan cepat/proyek dengan mahasiswa lain yang punya skill terkait, lewat kesepakatan yang jelas dan terlindungi bagi kedua pihak.
-- 📊 **Target Pengguna**: Mahasiswa dalam lingkup kampus yang sama — baik sebagai pemberi kerja (klien) yang memasang pekerjaan, maupun pekerja yang mengajukan penawaran.
-- 💡 **Value Proposition**: Kesepakatan yang terkunci (harga & tenggat tidak bisa diubah sepihak setelah disetujui), bukti kerja & testimoni yang otomatis membangun portofolio, serta **Career Compass** yang menyarankan proyek sedikit di atas level skill pengguna saat ini supaya portofolio naik bertahap.
+
+- **Tujuan utama**: Mempertemukan mahasiswa yang butuh pekerjaan cepat atau proyek dengan mahasiswa lain yang punya skill terkait, lewat kesepakatan yang jelas dan terlindungi bagi kedua pihak.
+- **Target pengguna**: Mahasiswa dalam lingkup kampus yang sama, baik sebagai pemberi kerja (klien) yang memasang pekerjaan, maupun pekerja yang mengajukan penawaran.
+- **Value proposition**: Kesepakatan yang terkunci, bukti kerja dan testimoni yang otomatis membangun portofolio, serta Career Compass yang menyarankan proyek sedikit di atas level skill pengguna supaya portofolio naik bertahap.
 
 ---
 
-## ✨ Fitur Unggulan
-
-### Fitur Utama
+## Fitur Unggulan
 
 | Fitur | Deskripsi | Keunggulan |
-|----------|--------------|---------------|
-| **Feed Kerja Cepat & Proyek** | Dua jenis pekerjaan: Kerja Cepat (mis. Antar & Ambil, Titip Beli, Pindah Barang, Bantu Acara) dan Proyek (mis. Desain Grafis, Coding & Web, Copywriting, Data & Riset) | Menyesuaikan skala kebutuhan, dari tugas singkat sampai proyek berbayar besar |
-| **Ajukan & Nego lewat Chat** | Pekerja mengajukan penawaran harga + catatan, lalu lanjut nego langsung lewat chat dengan pemberi kerja | Transparan — kedua pihak bisa diskusi sebelum berkomitmen |
-| **Kesepakatan Terkunci** | Setelah pekerja & klien sama-sama setuju, harga dan tenggat dikunci dan tidak bisa diubah sepihak | Melindungi kedua pihak dari perubahan harga/tenggat di tengah jalan |
-| **Bukti Kerja & Testimoni ke Portofolio** | Pekerja mengunggah bukti hasil kerja, klien mengonfirmasi selesai sambil memberi rating & testimoni | Hasil kerja otomatis jadi entri portofolio yang bisa ditunjukkan ke pemberi kerja berikutnya |
+|-------|-----------|------------|
+| **Feed Kerja Cepat dan Proyek** | Dua jenis pekerjaan: Kerja Cepat (Antar & Ambil, Titip Beli, Pindah Barang, Bantu Acara) dan Proyek (Desain Grafis, Coding & Web, Copywriting, Data & Riset) | Menyesuaikan skala kebutuhan, dari tugas singkat sampai proyek berbayar besar |
+| **Ajukan dan Nego lewat Chat** | Pekerja mengajukan harga plus catatan, lalu lanjut nego langsung dengan pemberi kerja | Transparan, kedua pihak bisa diskusi sebelum berkomitmen |
+| **Kesepakatan Terkunci** | Setelah kedua pihak setuju, harga dan tenggat dikunci di level database dan tidak bisa diubah sepihak | Melindungi kedua pihak dari perubahan di tengah jalan |
+| **Bukti Kerja dan Testimoni** | Pekerja mengunggah bukti hasil kerja, klien mengonfirmasi sambil memberi rating dan testimoni | Hasil kerja otomatis jadi entri portofolio yang bisa ditunjukkan ke pemberi kerja berikutnya |
+| **Notifikasi Lintas Pihak** | Delapan event siklus hidup kesepakatan dikirim otomatis ke pihak yang relevan | Tidak ada yang tertinggal informasi, status baca ikut akun bukan browser |
 
 ### Fitur Tambahan
-- **Career Compass** - Merekomendasikan pekerjaan yang "sedikit di atas" level skill pengguna berdasarkan riwayat kerja, supaya kemampuan naik bertahap.
-- **Track Record & Profil Publik** - Statistik pekerjaan selesai/dibatalkan/laporan belum dibayar, plus galeri portofolio yang bisa dilihat publik di `/u/:handle`.
-- **Laporan Belum Dibayar** - Mekanisme pelaporan saat klien tidak melakukan pembayaran setelah kesepakatan selesai, sebagai perlindungan bagi pekerja.
-- **Mode Terang & Gelap** - Dua tema yang didesain setara, bisa diganti kapan saja lewat toggle di navbar.
+
+- **Career Compass** merekomendasikan pekerjaan yang sedikit di atas level skill pengguna berdasarkan riwayat kerja.
+- **Track Record dan Profil Publik** menampilkan statistik pekerjaan selesai, dibatalkan, dan laporan belum dibayar, plus galeri portofolio yang bisa dilihat publik di `/u/:handle`.
+- **Laporan Belum Dibayar** sebagai mekanisme perlindungan pekerja, tercatat permanen di track record klien.
+- **Batas 2 Hari Konfirmasi** membuat pekerjaan tetap masuk track record walau klien tidak merespons.
+- **Mode Terang dan Gelap** yang didesain setara, bisa diganti kapan saja.
 
 ---
 
-## 📸 Demo & Screenshot
+## Teknologi
 
-### Live Demo
-🔗 **Ongoing** _(belum ada link demo yang di-deploy — akan diperbarui setelah rilis)_
+### Frontend
 
-### Screenshot Aplikasi
-_Ongoing — screenshot akan ditambahkan setelah alur utama aplikasi selesai difinalisasi._
+| Bagian | Pilihan |
+|--------|---------|
+| Framework | React 18.3 + Vite 5.2 + TypeScript 5.5 |
+| Styling | Tailwind CSS 3.4 (tema lewat CSS variable, dark mode berbasis class) |
+| Animasi | Framer Motion 11.5 |
+| Ikon | lucide-react 0.522 |
+| Routing | React Router DOM 6.26 |
+| State | React Context (AuthContext, StoreContext, ThemeContext, ToastContext) |
 
-### Video Demo
-📹 **Ongoing** _(opsional)_
+### Backend
 
----
-
-## 🛠️ Teknologi
-
-### Tech Stack
-
-#### Frontend
-```
-Framework    : React 18 + Vite + TypeScript
-UI Styling   : Tailwind CSS (custom theme via CSS variables, dark mode berbasis class)
-Animation    : Framer Motion
-Icons        : lucide-react
-Routing      : React Router DOM v6
-State Mgmt   : React Context API (StoreContext, ThemeContext, ToastContext)
-```
-
-#### Backend
-```
-Status       : Ongoing — belum ada backend/API terpisah
-Data saat ini: Seed/mock data di src/data/ (users, jobs, offers, agreements, messages),
-               dikelola sepenuhnya di sisi client lewat StoreContext (belum persisten,
-               reset saat halaman di-refresh)
-```
-
-#### DevOps & Tools
-```
-Deployment   : Ongoing
-CI/CD        : Ongoing
-Linting      : ESLint (.eslintrc.cjs)
-Testing      : Ongoing — belum ada test suite
-```
+| Bagian | Pilihan |
+|--------|---------|
+| Platform | Supabase (`@supabase/supabase-js` 2.112) |
+| Database | PostgreSQL dengan Row Level Security di semua tabel |
+| Autentikasi | Supabase Auth (email dan password) |
+| Logika bisnis | 11 fungsi RPC PostgreSQL, dipanggil lewat `supabase.rpc(...)` |
+| Otomasi | 5 trigger PostgreSQL (notifikasi, auto-agree, auto-lock, pagar batas waktu) |
+| Penyimpanan file | Supabase Storage, bucket publik `bukti-kerja` |
 
 ### Alasan Pemilihan Teknologi
 
-| Teknologi | Alasan Pemilihan |
-|-----------|------------------|
-| **Vite + React + TypeScript** | Dev experience cepat (HMR instan) dengan type-safety untuk model data yang cukup kompleks (Job, Offer, Agreement, dll). |
-| **Tailwind CSS** | Utility-first sehingga cepat membangun UI konsisten, dipadukan dengan CSS variable custom agar tema terang/gelap gampang dikelola dari satu sumber warna. |
-| **Framer Motion** | Transisi & micro-interaction halus (mis. tab switch, modal) yang mendukung kesan produk yang matang, bukan sekadar prototipe. |
-| **React Context API** (bukan Redux) | Skala state aplikasi saat ini masih cukup sederhana untuk dikelola tanpa state management eksternal. |
-
-### Dependencies Utama
-```json
-{
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.2",
-    "framer-motion": "^11.5.4",
-    "lucide-react": "0.522.0",
-    "@emotion/react": "^11.13.3"
-  },
-  "devDependencies": {
-    "vite": "^5.2.0",
-    "typescript": "^5.5.4",
-    "tailwindcss": "3.4.17",
-    "eslint": "^8.50.0"
-  }
-}
-```
+| Teknologi | Alasan |
+|-----------|--------|
+| **Vite + React + TypeScript** | Dev experience cepat dengan type safety untuk model data yang cukup kompleks (Job, Offer, Agreement, dan seterusnya). |
+| **Tailwind CSS** | Utility first sehingga cepat membangun UI konsisten, dipadukan CSS variable custom agar tema terang dan gelap dikelola dari satu sumber warna. |
+| **Supabase** | Auth, Postgres, RLS, dan Storage dalam satu layanan, sehingga tim kecil tidak perlu membangun dan merawat server sendiri. |
+| **Logika bisnis di RPC, bukan di frontend** | Perubahan status kesepakatan harus atomic dan tidak boleh bisa diakali dari browser. Menaruhnya sebagai fungsi database membuat aturan mainnya berlaku untuk semua pemanggil. |
+| **React Context, bukan Redux** | Skala state aplikasi masih cukup sederhana untuk dikelola tanpa state management eksternal. |
 
 ---
 
-## 🏗️ Arsitektur Sistem
+## Arsitektur Sistem
 
-### System Architecture
-Stepping Stone saat ini adalah **Single Page Application client-side murni** — belum ada backend/database sungguhan. Seluruh data disimpan sebagai seed data dan dikelola di memori browser lewat React Context.
+Stepping Stone adalah Single Page Application yang berbicara langsung ke Supabase. Tidak ada server aplikasi di tengah. Yang menjaga aturan main adalah database itu sendiri, lewat Row Level Security, fungsi RPC, dan trigger.
 
 ```mermaid
-flowchart LR
-    A["Browser"] --> B["React Router\n(App.tsx)"]
-    B --> C["Pages\n(Feed, JobDetail, Chat, Agreement, Profile, dst.)"]
-    C --> D["StoreContext\n(state Job/Offer/Agreement/Message)"]
-    C --> E["ThemeContext"]
-    C --> F["ToastContext"]
-    D --> G["Seed Data\n(src/data/*.ts)"]
+flowchart TB
+    A["Browser (React SPA)"]
+    A --> B["AuthContext<br/>sesi Supabase Auth"]
+    A --> C["StoreContext<br/>state Job/Offer/Agreement/Thread"]
+    C --> D["lib/api.ts<br/>satu-satunya lapisan akses data"]
+    D --> E["Supabase PostgREST<br/>baca data + RLS"]
+    D --> F["Supabase RPC<br/>11 fungsi, semua operasi tulis"]
+    D --> G["Supabase Storage<br/>bucket bukti-kerja"]
+    F --> H["Trigger PostgreSQL<br/>notifikasi, auto-lock, pagar batas waktu"]
+    H --> I["Tabel notifications"]
+    E --> I
 ```
 
-> Ongoing: backend/API dan database persisten direncanakan pada tahap pengembangan berikutnya.
+### Prinsip yang Dipegang
 
-### Database Schema
-Belum ada database sungguhan (Ongoing). Berikut model data yang sudah didefinisikan di `src/types/index.ts` sebagai acuan skema ke depannya:
+1. **Semua operasi tulis lewat RPC.** Frontend tidak pernah `INSERT` atau `UPDATE` langsung ke tabel domain. Ini membuat perubahan status kesepakatan atomic dan tidak bisa dipecah-pecah dari browser.
+2. **Aturan main ditegakkan di level tabel, bukan di komponen.** Contohnya penguncian kesepakatan dan batas 2 hari konfirmasi diwujudkan sebagai trigger, sehingga berlaku apa pun jalur pemanggilnya.
+3. **Notifikasi lahir dari trigger, bukan diturunkan di client.** Baris `notifications` dibuat oleh trigger yang membaca transisi `OLD` ke `NEW`, jadi tidak ada race condition dan status baca ikut akun, bukan browser.
+4. **Polling, bukan WebSocket.** Chat menyegarkan tiap 2,5 detik dan notifikasi tiap 20 detik. Cukup untuk skala kampus dan jauh lebih sederhana untuk dirawat.
+
+---
+
+## Skema Database
+
+### Tabel
+
+| Tabel | Isi |
+|-------|-----|
+| `profiles` | Profil pengguna, satu baris per akun Supabase Auth |
+| `jobs` | Postingan pekerjaan, punya tipe `kerja-cepat` atau `proyek` |
+| `offers` | Penawaran harga dari pekerja ke satu pekerjaan |
+| `agreements` | Inti sistem. Kesepakatan hasil penawaran yang dipilih, lengkap dengan status, bukti, dan konfirmasi |
+| `threads` | Wadah percakapan, selalu terikat ke satu pekerjaan |
+| `messages` | Isi percakapan |
+| `notifications` | Notifikasi per pengguna, diisi otomatis oleh trigger |
+
+View `user_stats` dan `user_portfolio` dihitung otomatis dari tabel di atas, tidak disimpan sebagai kolom.
 
 ```mermaid
 erDiagram
-    USER ||--o{ PORTFOLIO_ITEM : memiliki
-    USER ||--o{ JOB : memasang
-    USER ||--o{ OFFER : mengajukan
-    JOB ||--o{ OFFER : menerima
-    OFFER ||--o| AGREEMENT : menjadi
-    AGREEMENT }o--|| USER : client
-    AGREEMENT }o--|| USER : worker
-    JOB ||--o| THREAD : membuka
-    THREAD ||--o{ MESSAGE : berisi
+    PROFILES ||--o{ JOBS : memasang
+    PROFILES ||--o{ OFFERS : mengajukan
+    PROFILES ||--o{ NOTIFICATIONS : menerima
+    JOBS ||--o{ OFFERS : menerima
+    JOBS ||--o| AGREEMENTS : menghasilkan
+    OFFERS ||--o| AGREEMENTS : menjadi
+    AGREEMENTS }o--|| PROFILES : client
+    AGREEMENTS }o--|| PROFILES : worker
+    JOBS ||--o{ THREADS : membuka
+    THREADS ||--o{ MESSAGES : berisi
 ```
 
-### Folder Structure
+### Status Kesepakatan
+
 ```
-Stepping-Stone/
-├── src/
-│   ├── components/
-│   │   ├── agreement/     # Kartu & modal alur kesepakatan (ajukan → kunci → selesai)
-│   │   ├── feed/          # Kartu pekerjaan, filter feed, skeleton loading
-│   │   ├── layout/        # AppShell, Navbar, Sidebar
-│   │   ├── offer/         # Kartu & modal penawaran harga
-│   │   ├── profile/       # Kartu portofolio & statistik track record
-│   │   └── ui/            # Design system primitives (Button, Modal, Input, dst.)
-│   ├── contexts/          # StoreContext, ThemeContext, ToastContext
-│   ├── data/              # Seed/mock data (users, jobs, interactions, reference)
-│   ├── pages/             # Semua halaman (Landing, Feed, Chat, Profile, dst.)
-│   ├── types/             # Definisi TypeScript
-│   ├── utils/             # Helper (format, status, cn, compass)
-│   ├── App.tsx            # Routing utama
-│   └── index.tsx          # Entry point
-├── public/                # Aset gambar statis
-├── index.html
-├── vite.config.ts
-├── tailwind.config.js
-└── package.json
+waiting-approval -> locked -> in-progress -> waiting-confirmation -> completed
+                                                                  -> completed-unconfirmed
+     (kapan saja sebelum selesai) -> cancelled
 ```
+
+### Fungsi RPC
+
+Semua operasi tulis dilakukan lewat fungsi berikut, bukan lewat akses tabel langsung.
+
+`create_job`, `submit_offer`, `select_offer`, `agree_to_agreement`, `submit_proof`, `confirm_completion`, `close_without_confirmation`, `cancel_agreement`, `report_unpaid`, `get_or_create_thread`, `send_message`
+
+### Migrasi
+
+Folder `supabase/migrations/` berisi perubahan skema yang bisa dijalankan ulang (idempotent).
+
+| File | Isi |
+|------|-----|
+| `0001_notifications_table.sql` | Tabel `notifications` beserta policy RLS |
+| `0002_double_agree.sql` | Klien otomatis dianggap setuju saat memilih penawaran, dan kesepakatan terkunci sendiri begitu kedua pihak setuju |
+| `0003_notification_triggers.sql` | Trigger untuk delapan event siklus hidup kesepakatan |
+| `0004_completion_timeout_guard.sql` | Pagar sisi server untuk batas 2 hari konfirmasi |
+| `0005_storage_bukti_kerja.sql` | Bucket `bukti-kerja` beserta policy penyimpanan |
 
 ---
 
-## ⚙️ Instalasi & Setup
+## Instalasi dan Setup
 
-### Prerequisites
-Pastikan Anda telah menginstall:
-- **Node.js** (v18.x atau lebih tinggi)
-- **npm**
-- **Git**
+### Prasyarat
 
-### Langkah Instalasi
+- Node.js v18 atau lebih tinggi
+- npm
+- Git
+- Satu project Supabase
 
-#### 1️⃣ Clone Repository
+### 1. Clone Repository
+
 ```bash
 git clone https://github.com/lewron135/Stepping-Stone.git
 cd Stepping-Stone
 ```
 
-#### 2️⃣ Install Dependencies
+### 2. Install Dependencies
+
 ```bash
 npm install
 ```
 
-#### 3️⃣ Environment Variables
-Saat ini **belum ada environment variable** yang dibutuhkan — seluruh data masih berupa seed/mock data di sisi client (lihat `src/data/`). Bagian ini akan diperbarui begitu backend & konfigurasi API tersedia (Ongoing).
+### 3. Siapkan Environment Variable
 
-#### 4️⃣ Run Development Server
+```bash
+cp .env.example .env
+```
+
+Isi `.env` dengan nilai dari Supabase Dashboard, menu Project Settings lalu API.
+
+```
+VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=
+```
+
+Anon key aman berada di sisi browser karena setiap tabel dilindungi Row Level Security. Jangan pernah menaruh `service_role` key di file ini.
+
+### 4. Siapkan Database
+
+Buka SQL Editor di dashboard Supabase, lalu jalankan isi `supabase/migrations/` secara berurutan dari `0001` sampai `0005`. Semuanya idempotent, jadi aman dijalankan ulang.
+
+> **Catatan penting untuk setup dari nol.** Repository ini belum menyimpan definisi SQL dari 11 fungsi RPC dan skema tabel awal (`profiles`, `jobs`, `offers`, `agreements`, `threads`, `messages`). Fungsi-fungsi itu dibuat lebih dulu langsung di dashboard Supabase sebelum praktik migrasi berbasis file diterapkan. Artinya, menjalankan folder `migrations/` saja belum cukup untuk membangun project Supabase yang benar-benar baru. Memindahkan sisa skema ke file migrasi masih jadi pekerjaan yang belum selesai.
+
+### 5. Jalankan Development Server
+
 ```bash
 npm run dev
 ```
-Aplikasi akan berjalan di `http://localhost:5173`
+
+Aplikasi berjalan di `http://localhost:5173`.
 
 ---
 
-## 🚀 Penggunaan
+## Penggunaan
 
-### Menjalankan Aplikasi
+### Perintah yang Tersedia
+
 ```bash
-# Development mode
-npm run dev
-
-# Production build
-npm run build
-
-# Preview hasil build
-npm run preview
-
-# Linting
-npm run lint
+npm run dev        # mode development
+npm run build      # build produksi
+npm run preview    # pratinjau hasil build
+npm run lint       # ESLint
+npx tsc --noEmit   # pemeriksaan tipe
 ```
 
-### User Guide
+### Alur Pengguna
 
-1. **Masuk ke Aplikasi**: Buka halaman Landing lalu klik **Get Started** atau **Masuk**. _(Ongoing — belum ada sistem autentikasi sungguhan; saat ini aplikasi memakai satu akun demo tetap untuk keperluan prototipe.)_
-2. **Jelajahi Pekerjaan**: Dari Feed, pilih tab **Kerja Cepat** atau **Proyek**, lalu buka detail pekerjaan yang diminati.
-3. **Ajukan Penawaran**: Isi harga & catatan pada pekerjaan yang dipilih, lalu lanjutkan nego lewat halaman Chat.
-4. **Kunci Kesepakatan**: Setelah klien memilih penawaran dan kedua pihak setuju, harga & tenggat otomatis terkunci di halaman Kesepakatan.
-5. **Kerjakan & Buktikan**: Pekerja mengunggah bukti hasil kerja; klien mengonfirmasi selesai sambil memberi rating & testimoni yang masuk ke Portofolio pekerja.
-6. **Pasang Pekerjaan Sendiri**: Buat lowongan baru lewat halaman **Pasang Pekerjaan** jika ingin berperan sebagai klien.
+1. **Daftar atau masuk.** Autentikasi memakai email dan password lewat Supabase Auth.
+2. **Jelajahi pekerjaan.** Dari Feed, pilih tab Kerja Cepat atau Proyek, lalu buka detail pekerjaan.
+3. **Ajukan penawaran.** Isi harga dan catatan, lalu lanjutkan nego lewat Chat. Pemasang pekerjaan langsung mendapat notifikasi.
+4. **Kunci kesepakatan.** Saat klien memilih satu penawaran, dia otomatis dianggap setuju. Kesepakatan terkunci begitu pekerja menekan Setuju, dan sejak itu harga dan tenggat tidak bisa diubah.
+5. **Kerjakan dan buktikan.** Pekerja mengunggah foto bukti, klien mengonfirmasi sambil memberi rating dan testimoni.
+6. **Portofolio terbentuk.** Bukti dan testimoni otomatis jadi entri portofolio di profil publik pekerja.
 
----
-
-## 📚 API Documentation
-Ongoing — belum ada backend/API terpisah. Seluruh interaksi data (membuat pekerjaan, mengajukan penawaran, mengunci kesepakatan, mengirim pesan, dst.) saat ini ditangani langsung di sisi client melalui `StoreContext` (`src/contexts/StoreContext.tsx`) menggunakan seed data. Dokumentasi API akan ditambahkan begitu backend sungguhan dibangun.
+Jika klien tidak merespons dalam 2 hari sejak bukti dikirim, kesepakatan berubah jadi Selesai (Belum Dikonfirmasi). Pekerjaan tetap masuk track record pekerja, hanya tanpa rating dan testimoni.
 
 ---
 
-## 🧪 Testing
-Ongoing — belum ada test suite (unit/integration/e2e) yang disiapkan untuk proyek ini.
+## Keputusan Teknis
+
+| Keputusan | Alasan |
+|-----------|--------|
+| **Chat pakai polling, bukan WebSocket** | Untuk skala kampus, penyegaran tiap 2,5 detik sudah terasa langsung, tanpa perlu merawat koneksi persisten. |
+| **Batas 2 hari dihitung saat halaman dibuka, bukan cron job** | Menghindari ketergantungan pada penjadwal eksternal. Syaratnya tetap divalidasi ulang oleh trigger di server, jadi jam browser yang meleset tidak bisa mempercepat penutupan. |
+| **Notifikasi dari trigger, bukan diturunkan di client** | Bertahan lintas device dan refresh, tahan race condition, dan tidak kehilangan informasi siapa pelaku sebenarnya. |
+| **Bucket bukti kerja bersifat publik** | Bukti yang sudah dikonfirmasi otomatis jadi entri portofolio yang memang ditampilkan terbuka. Bucket privat akan memaksa setiap tampilan portofolio meminta signed URL yang bisa kedaluwarsa. |
+| **Tabel `notifications` tanpa policy insert** | Baris hanya pernah dibuat oleh trigger `security definer`, sehingga pengguna biasa tidak bisa mengarang notifikasi palsu lewat panggilan langsung ke tabel. |
 
 ---
 
-## 📄 Lisensi
-Proyek ini dilisensikan di bawah [MIT License](LICENSE) - lihat file LICENSE untuk detail lebih lanjut.
+## Status Pengembangan
+
+### Sudah Berjalan
+
+- Autentikasi, pembuatan pekerjaan, penawaran, chat, siklus penuh kesepakatan, unggah bukti, testimoni, portofolio, notifikasi, dan Career Compass.
+- Pemeriksaan tipe dan lint bersih tanpa error.
+
+### Belum Ada
+
+- **Deployment.** Belum ada URL demo yang bisa diakses publik.
+- **Test suite.** Belum ada unit, integration, maupun end to end test.
+- **Definisi SQL untuk skema awal dan 11 fungsi RPC.** Lihat catatan di bagian Instalasi.
+- **AI Search Assistant.** Direncanakan tapi belum dibangun.
 
 ---
+
+## Tim Pengembang
+
+| Nama | GitHub |
+|------|--------|
+| **Josep Natanael Pasaribu** | [@lewron135](https://github.com/lewron135) |
+| **Marcellino Varian Saputra** | [@marcellinovs](https://github.com/marcellinovs) |
+| **Stanley Lin** | [@Linneisa](https://github.com/Linneisa) |
+
+---
+
+## Lisensi
+
+Proyek ini dilisensikan di bawah [MIT License](LICENSE). Lihat file LICENSE untuk detail lebih lanjut.
 
 <div align="center">
 
-  **Made with ❤️ by Entar ajadeh for ITECHNO CUP 2026**
+  **Dibuat oleh Entar ajadeh untuk ITECHNO CUP 2026**
 
 </div>
