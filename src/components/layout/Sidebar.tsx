@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   BellIcon,
   CompassIcon,
@@ -16,6 +16,7 @@ import {
   XIcon } from
 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLogout } from '../../hooks/useLogout';
 import { useNotifications } from '../../hooks/useNotifications';
 import { cn } from '../../utils/cn';
 
@@ -36,7 +37,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
-  const navigate = useNavigate();
+  const logout = useLogout();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount, chatUnreadCount } = useNotifications();
 
@@ -131,7 +132,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               type="button"
               onClick={() => {
                 onClose();
-                navigate('/');
+                void logout();
               }}
               className="flex w-full items-center gap-3 px-2 py-2.5 text-sm text-muted transition-colors duration-150 ease-out hover:text-ink">
               

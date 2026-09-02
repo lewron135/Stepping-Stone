@@ -1,35 +1,18 @@
-import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowUpRightIcon, FileUpIcon, ShieldCheckIcon, Trash2Icon } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowUpRightIcon } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { useStore } from '../contexts/StoreContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useToast } from '../contexts/ToastContext';
 import { recommendJobs } from '../utils/compass';
 import { deadlineLabel, rupiah } from '../utils/format';
-
-const EXTRACTED_SKILLS = ['Adobe Illustrator', 'Manajemen proyek kecil', 'Copywriting singkat'];
 
 export function CareerCompass() {
   const { jobs } = useStore();
   const currentUser = useCurrentUser();
-  const { toast } = useToast();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [parsing, setParsing] = useState(false);
-  const [extracted, setExtracted] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   const recommendations = recommendJobs(currentUser, jobs, 4);
-
-  const handleFile = (file?: File) => {
-    if (!file) return;
-    setParsing(true);
-    window.setTimeout(() => {
-      setParsing(false);
-      setExtracted(EXTRACTED_SKILLS);
-      toast('Skill diambil, file CV dihapus', 'Hanya daftar skill yang kami simpan.');
-    }, 1100);
-  };
 
   return (
     <div className="py-6">
@@ -85,52 +68,46 @@ export function CareerCompass() {
             <h2 id="skills-heading" className="text-[13px] font-bold tracking-tight text-ink">
               Skill kamu sekarang
             </h2>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {[...currentUser.skills, ...extracted].map((skill) =>
-              <Badge key={skill} tone="muted">
-                  {skill}
-                </Badge>
-              )}
-            </div>
+            {currentUser.skills.length ?
+            <>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {currentUser.skills.map((skill) =>
+                <Badge key={skill} tone="muted">
+                      {skill}
+                    </Badge>
+                )}
+                </div>
+                <Link
+                to="/pengaturan"
+                className="mt-3 inline-block text-[12px] font-semibold text-muted hover:text-ink">
+                
+                  Ubah di Pengaturan
+                </Link>
+              </> :
+
+            <>
+                <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+                  Rekomendasi di sebelah dihitung dari portofolio kamu. Menambahkan skill di
+                  profil membuatnya lebih tepat, dan kamu bisa mengisinya sekali unggah dari CV.
+                </p>
+                <Button
+                className="mt-3"
+                variant="secondary"
+                size="sm"
+                fullWidth
+                onClick={() => navigate('/pengaturan')}>
+                
+                  Lengkapi profil
+                </Button>
+              </>
+            }
           </section>
 
-          <section className="border border-line bg-surface p-4" aria-labelledby="cv-heading">
-            <h2 id="cv-heading" className="text-[13px] font-bold tracking-tight text-ink">
-              Unggah CV (opsional)
-            </h2>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-              Kami hanya mengambil daftar skill dari CV kamu. Setelah itu file aslinya langsung
-              dihapus, tidak disimpan dan tidak dibagikan.
+          <section className="border border-dashed border-line p-4">
+            <p className="text-[12px] leading-relaxed text-muted">
+              Rekomendasi ini bukan tebakan model. Dihitung dari kategori yang sudah kamu
+              buktikan di portofolio dan nilai proyek terbesar yang pernah kamu selesaikan.
             </p>
-            <Button
-              className="mt-3"
-              variant="secondary"
-              size="sm"
-              fullWidth
-              loading={parsing}
-              icon={<FileUpIcon className="h-3.5 w-3.5" aria-hidden />}
-              onClick={() => inputRef.current?.click()}>
-              
-              {parsing ? 'Mengambil skill' : 'Pilih file CV'}
-            </Button>
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".pdf,.doc,.docx"
-              className="hidden"
-              onChange={(event) => handleFile(event.target.files?.[0])} />
-            
-            {extracted.length > 0 ?
-            <p className="mt-3 flex items-start gap-2 text-[12px] leading-relaxed text-ink">
-                <Trash2Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                {extracted.length} skill ditambahkan. File CV sudah dihapus dari server.
-              </p> :
-
-            <p className="mt-3 flex items-start gap-2 text-[11.5px] leading-relaxed text-faint">
-                <ShieldCheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-                Tanpa CV pun rekomendasi tetap jalan, memakai portofolio kamu di aplikasi.
-              </p>
-            }
           </section>
         </aside>
       </div>

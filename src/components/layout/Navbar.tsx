@@ -7,11 +7,13 @@ import { SearchInput } from '../ui/SearchInput';
 import { Dropdown } from '../ui/Dropdown';
 import { useStore } from '../../contexts/StoreContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLogout } from '../../hooks/useLogout';
 
 export function Navbar({ onOpenMenu }: {onOpenMenu: () => void;}) {
   const { currentUser } = useStore();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const logout = useLogout();
   const location = useLocation();
   const [query, setQuery] = useState('');
   const [mobileSearch, setMobileSearch] = useState(false);
@@ -77,7 +79,7 @@ export function Navbar({ onOpenMenu }: {onOpenMenu: () => void;}) {
               { label: 'Profil saya', onSelect: () => navigate('/profil') },
               { label: 'Aktivitas Saya', onSelect: () => navigate('/aktivitas') },
               { label: 'Settings', onSelect: () => navigate('/pengaturan') },
-              { label: 'Logout', onSelect: () => navigate('/') }]
+              { label: 'Logout', onSelect: () => void logout() }]
               } /> :
 
             <div className="flex items-center gap-3">

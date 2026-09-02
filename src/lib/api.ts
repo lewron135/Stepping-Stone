@@ -4,6 +4,16 @@ import type {
 '../types';
 import type { NewJobInput } from '../contexts/StoreContext';
 
+export interface ProfileInput {
+  name: string;
+  campus: string;
+  faculty: string;
+  major: string;
+  year: string;
+  bio: string;
+  skills: string[];
+}
+
 function mapJob(row: any): Job {
   return {
     id: row.id,
@@ -270,11 +280,11 @@ async function buildUserFromProfile(profile: any): Promise<User> {
     id: profile.id,
     handle: profile.handle,
     name: profile.name,
-    campus: profile.campus,
-    faculty: profile.faculty,
-    major: profile.major,
-    year: profile.year,
-    bio: profile.bio,
+    campus: profile.campus ?? '',
+    faculty: profile.faculty ?? '',
+    major: profile.major ?? '',
+    year: profile.year ?? '',
+    bio: profile.bio ?? '',
     skills: profile.skills ?? [],
     stats: {
       completed: statsRow?.completed ?? 0,
@@ -305,6 +315,64 @@ export async function fetchUserByHandle(handle: string): Promise<User | undefine
   if (error) throw error;
   if (!profile) return undefined;
   return buildUserFromProfile(profile);
+}
+
+// Satu-satunya jalan tulis ke kolom profil. Pembersihan isian (trim, buang skill kembar,
+// batas panjang) sengaja tidak dilakukan di sini melainkan di dalam RPC, supaya aturannya
+// sama untuk semua pemanggil. Lihat supabase/migrations/0006_update_profile.sql.
+// Ekstraksi CV. Endpoint-nya tidak memegang rahasia apa pun, jadi dipanggil langsung dari
+// browser. Alamatnya lewat env supaya bisa diarahkan ke server lokal saat development dan ke
+// /api/extract-cv saat sudah di Vercel, tanpa mengubah kode.
+const CV_EXTRACT_URL = import.meta.env.VITE_CV_EXTRACT_URL ?? '/api/extract-cv';
+
+export const CV_MAX_BYTES = 4 * 1024 * 1024;
+
+// Semuanya usulan, belum tersimpan. Yang memutuskan tetap user lewat form profil.
+export interface CvDraft {
+  skills: string[];
+  campus: string;
+  faculty: string;
+  major: string;
+  year: string;
+}
+
+export async function extractCvProfile(file: File): Promise<CvDraft> {
+  if (file.size > CV_MAX_BYTES) {
+    throw new Error('Ukuran file maksimal 4 MB.');
+  }
+
+  const response = await fetch(CV_EXTRACT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/pdf' },
+    body: file
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error ?? 'Layanan ekstraksi sedang tidak bisa dihubungi.');
+  }
+
+  return {
+    skills: Array.isArray(payload.skills) ? payload.skills : [],
+    campus: payload.campus ?? '',
+    faculty: payload.faculty ?? '',
+    major: payload.major ?? '',
+    year: payload.year ?? ''
+  };
+}
+
+export async function updateProfile(input: ProfileInput): Promise<User> {
+  const { data, error } = await supabase.rpc('update_profile', {
+    p_name: input.name,
+    p_campus: input.campus,
+    p_faculty: input.faculty,
+    p_major: input.major,
+    p_year: input.year,
+    p_bio: input.bio,
+    p_skills: input.skills
+  });
+  if (error) throw error;
+  return buildUserFromProfile(data);
 }
 
 export async function createJob(input: NewJobInput): Promise<Job> {

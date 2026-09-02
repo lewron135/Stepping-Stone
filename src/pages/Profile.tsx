@@ -53,6 +53,14 @@ export function Profile() {
   const user = handle ? fetchedUser : currentUser;
   const isMe = user?.id === currentUser?.id;
 
+  // Kolom detail profil boleh kosong, jadi bagian yang kosong tidak ikut dirender. Tanpa ini
+  // yang muncul di layar cuma titik pemisah menggantung.
+  const academic = [user?.major, user?.faculty].filter(Boolean).join(' · ');
+  const origin = [user?.campus, user?.year].filter(Boolean).join(' · ');
+  const hasDetails = Boolean(
+    user && (user.bio || user.faculty || user.major || user.year || user.skills.length)
+  );
+
   // Semua hook dipanggil sebelum early return di bawah. Sebelumnya useMemo portfolio ada di
   // bawah dua early return, jadi urutan hook berubah antar render dan React bisa error.
   const myAgreements = useMemo(
@@ -143,13 +151,24 @@ export function Profile() {
               {user.name}
             </h1>
             <p className="mt-1 text-[13px] text-faint">@{user.handle}</p>
-            <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink">
-              {user.major} · {user.faculty}
-            </p>
-            <p className="text-[13px] text-muted">
-              {user.campus} · {user.year}
-            </p>
-            <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-muted">{user.bio}</p>
+            {academic ?
+            <p className="mt-2.5 text-[13.5px] leading-relaxed text-ink">{academic}</p> :
+            null}
+            {origin ?
+            <p className="text-[13px] text-muted">{origin}</p> :
+            null}
+            {user.bio ?
+            <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-muted">{user.bio}</p> :
+            null}
+            {isMe && !hasDetails ?
+            <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+                Detail profil kamu masih kosong.{' '}
+                <Link to="/pengaturan" className="font-semibold text-ink hover:underline">
+                  Lengkapi sekarang
+                </Link>{' '}
+                supaya pemberi kerja tahu latar belakang kamu.
+              </p> :
+            null}
             {user.skills.length ?
             <div className="mt-4 flex flex-wrap gap-1.5">
                 {user.skills.map((skill) =>
