@@ -8,9 +8,15 @@ memegang API key cuma /api/parse-search nanti, dan itu urusan Search Assistant.
 """
 
 import json
+import os
+import sys
 from http.server import BaseHTTPRequestHandler
 
-from _extractor import extract_profile_from_pdf
+# Folder function ikut dimasukkan ke jalur impor supaya `_extractor` tetap ketemu, apa pun
+# direktori kerja yang dipakai runtime Vercel saat menjalankan file ini.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from _extractor import extract_profile_from_pdf  # noqa: E402
 
 MAX_BYTES = 4 * 1024 * 1024
 
