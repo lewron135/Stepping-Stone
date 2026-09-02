@@ -34,7 +34,15 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_OPTIONS(self):
-        self._send(204, {})
+        # 204 tidak boleh punya body. Sebelumnya balasan ini menyertakan "{}" beserta
+        # Content-Length, dan browser menolak preflight seperti itu sehingga POST-nya tidak
+        # pernah terkirim. Curl tidak rewel soal ini, jadi bugnya cuma terlihat dari browser.
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
 
     def do_POST(self):
         length = int(self.headers.get("Content-Length") or 0)

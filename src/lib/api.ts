@@ -323,7 +323,10 @@ export async function fetchUserByHandle(handle: string): Promise<User | undefine
 // Ekstraksi CV. Endpoint-nya tidak memegang rahasia apa pun, jadi dipanggil langsung dari
 // browser. Alamatnya lewat env supaya bisa diarahkan ke server lokal saat development dan ke
 // /api/extract-cv saat sudah di Vercel, tanpa mengubah kode.
-const CV_EXTRACT_URL = import.meta.env.VITE_CV_EXTRACT_URL ?? '/api/extract-cv';
+// Sengaja pakai || bukan ??, karena env var yang didaftarkan di Vercel tapi dibiarkan
+// kosong bernilai string kosong, bukan undefined. Dengan ?? nilai kosong itu lolos dan
+// aplikasi menembak fetch(''), yang berarti POST ke halaman itu sendiri.
+const CV_EXTRACT_URL = import.meta.env.VITE_CV_EXTRACT_URL || '/api/extract-cv';
 
 export const CV_MAX_BYTES = 4 * 1024 * 1024;
 

@@ -21,5 +21,5 @@ spec.loader.exec_module(module)
 if __name__ == "__main__":
     port = 8787
     print(f"Ekstraksi CV siap di http://localhost:{port}/api/extract-cv")
-    print("Memuat model spaCy saat request pertama, jadi request pertama memang lambat.")
+    print("Tekan Ctrl+C untuk berhenti.")
     HTTPServer(("127.0.0.1", port), module.handler).serve_forever()
