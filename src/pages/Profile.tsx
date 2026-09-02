@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BriefcaseIcon, ShieldIcon, UserXIcon } from 'lucide-react';
+import { BriefcaseIcon, FileUpIcon, ShieldIcon, UserXIcon } from 'lucide-react';
 import type { PortfolioItem, User } from '../types';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
@@ -160,15 +160,6 @@ export function Profile() {
             {user.bio ?
             <p className="mt-3 max-w-xl text-[13.5px] leading-relaxed text-muted">{user.bio}</p> :
             null}
-            {isMe && !hasDetails ?
-            <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
-                Detail profil kamu masih kosong.{' '}
-                <Link to="/pengaturan" className="font-semibold text-ink hover:underline">
-                  Lengkapi sekarang
-                </Link>{' '}
-                supaya pemberi kerja tahu latar belakang kamu.
-              </p> :
-            null}
             {user.skills.length ?
             <div className="mt-4 flex flex-wrap gap-1.5">
                 {user.skills.map((skill) =>
@@ -201,6 +192,31 @@ export function Profile() {
           Nomor telepon dan lokasi presisi tidak pernah ditampilkan.
         </p>
       </header>
+
+      {isMe && !hasDetails ?
+      <section className="mt-6 border border-line-strong bg-surface p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="flex items-center gap-2 text-[14px] font-bold tracking-tight text-ink">
+                <FileUpIcon className="h-4 w-4 shrink-0" aria-hidden />
+                Punya CV? Isi profil sekali unggah
+              </h2>
+              <p className="mt-1.5 max-w-lg text-[12.5px] leading-relaxed text-muted">
+                Kampus, jurusan, angkatan, dan daftar skill diambil langsung dari CV kamu, jadi
+                tidak perlu mengetik satu per satu. Semuanya bisa kamu koreksi dulu sebelum
+                disimpan.
+              </p>
+            </div>
+            <Button
+            size="sm"
+            className="shrink-0"
+            onClick={() => navigate('/pengaturan')}>
+            
+              Isi dari CV
+            </Button>
+          </div>
+        </section> :
+      null}
 
       <Tabs
         className="mt-6"
