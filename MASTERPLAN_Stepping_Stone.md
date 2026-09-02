@@ -12,6 +12,66 @@ Sebelum memberi saran apa pun, pahami hal berikut:
 2. **Ada bagian "Jangan Dibangun".** Itu bukan daftar fitur yang belum sempat dipikirkan. Itu daftar hal yang sengaja ditolak, sebagian karena berisiko diskualifikasi lomba.
 3. **Ini proyek kompetisi dengan tenggat ketat**, bukan startup yang dibangun bertahun-tahun. Saran yang benar secara arsitektur tapi memakan waktu berlebihan adalah saran yang salah untuk konteks ini.
 4. **Prioritas utama: fungsi inti berjalan sempurna, bukan jumlah fitur banyak.** Rubrik juri menilai "keberhasilan implementasi fungsi utama", bukan panjang daftar fitur.
+5. **Baca bagian "Status Implementasi Sebenarnya" di bawah sebelum menyimpulkan apa pun soal kode.** Dokumen ini menjelaskan rencana. Bagian itu menjelaskan apa yang benar-benar sudah jalan, apa yang masih tampilan kosong, dan apa yang belum ada sama sekali. Jangan berasumsi sebuah fitur berfungsi hanya karena halamannya ada.
+
+---
+
+## STATUS IMPLEMENTASI SEBENARNYA
+
+> Diperbarui **1 September 2026**. Bagian ini dibuat supaya AI yang membaca dokumen ini tidak
+> menyimpulkan sebuah fitur sudah jalan hanya karena halamannya ada. Perbarui bagian ini setiap
+> kali ada perubahan besar.
+
+### Sudah jalan dan sudah diuji manual dengan dua akun
+
+Daftar dan masuk, dua tab feed dengan filter dan pencarian, pasang pekerjaan dengan brief wajib,
+slot jumlah orang, ajukan penawaran, pilih penawaran, chat polling, siklus penuh kesepakatan
+(setuju, terkunci, tandai selesai, unggah bukti, konfirmasi, testimoni), laporan belum dibayar,
+batas 2 hari konfirmasi, rekam jejak dua arah, profil publik `/u/:handle`, portofolio, notifikasi
+delapan event, tema terang dan gelap.
+
+Backend memakai Supabase: 7 tabel dengan RLS, 11 fungsi RPC, 5 trigger, dan satu bucket Storage
+bernama `bukti-kerja`. File migrasi ada di `supabase/migrations/`.
+
+### Masih tampilan kosong, tombolnya belum menyimpan apa pun
+
+| Tempat | Kenyataannya |
+|---|---|
+| Ekstraksi CV di `pages/CareerCompass.tsx` | `setTimeout` 1,1 detik lalu menampilkan daftar skill yang di-hardcode. Tidak ada ekstraksi, tidak ada API. **Copy-nya mengklaim "File CV sudah dihapus dari server" padahal file itu tidak pernah dikirim ke server mana pun.** Ini risiko di Tanya Jawab juri, karena bagian 15 menandai etika AI sebagai perhatian khusus |
+| Tombol "Simpan perubahan" di `pages/Settings.tsx` | Cuma memunculkan toast. Tidak menyimpan apa pun ke database |
+| Tombol Logout di Navbar, Sidebar, dan SidebarRail | Cuma `navigate('/')`. Fungsi `signOut` ada di `AuthContext` tapi **tidak pernah dipanggil dari mana pun**, jadi sesinya tetap hidup dan user langsung masuk lagi begitu membuka halaman terlindungi |
+| Tombol "Bagikan WhatsApp" di halaman Kesepakatan | Cuma toast. Tidak ada nomor yang benar-benar dibagikan |
+
+Rekomendasi Career Compass sendiri **nyata**, bukan palsu. Logikanya ada di `utils/compass.ts`,
+menghitung dari kategori yang sudah dibuktikan di portofolio dan harga proyek terbesar. Yang belum
+nyata cuma bagian ekstraksi CV-nya.
+
+### Belum ada sama sekali
+
+- **Deploy dan hosting.** Ini syarat wajib submit penyisihan, belum dikerjakan
+- **AI Search Assistant** (bagian 4.11) dan **proxy Edge Function** yang jadi prasyaratnya
+- **Form edit profil.** Kolom `bio`, `skills`, `faculty`, `major`, `year` sudah ada di tabel
+  `profiles` dan di tipe `User`, tapi tidak ada satu pun UI untuk mengisinya. Saat daftar cuma
+  nama dan kampus yang dikumpulkan, sisanya `null`
+- **Definisi SQL untuk skema tabel awal dan 11 fungsi RPC.** Semuanya dibuat langsung di dashboard
+  Supabase sebelum tim memakai file migrasi, jadi repo ini belum bisa dipakai membangun project
+  Supabase dari nol
+- **Automated test** dalam bentuk apa pun
+- Komentar di postingan dan rekap pendapatan (dua-duanya dari daftar "Sebaiknya Ada")
+
+### Catatan cara kerja dengan Supabase
+
+Claude tidak bisa menerapkan perubahan skema sendiri. Yang tersedia cuma `VITE_SUPABASE_URL` dan
+`VITE_SUPABASE_ANON_KEY` di `.env`, tidak ada CLI maupun MCP Supabase. Tulis perubahan skema
+sebagai file di `supabase/migrations/`, lalu Josep yang menjalankannya di SQL Editor dashboard.
+
+Anon key tetap berguna untuk **debugging read-only** lewat PostgREST
+(`curl $URL/rest/v1/<tabel>` dengan header `apikey`). Cara ini yang menemukan tabel `notifications`
+belum dibuat, setelah lama salah menduga bugnya ada di frontend. Sebelum menuduh frontend, probe
+dulu endpoint-nya.
+
+Perlu diingat juga: role akun Josep di organisasi Supabase belum tentu Owner, jadi ada operasi
+yang harus dilakukan rekan setimnya.
 
 ---
 
@@ -137,6 +197,19 @@ Dua blok terpisah, karena mengukur hal berbeda:
 
 Profil bisa dibagikan lewat **tautan publik**, bisa dibuka orang yang tidak punya akun.
 
+**Blok ketiga: Detail Profil** (ditambahkan 1 September 2026). Bio singkat, fakultas, jurusan,
+angkatan, dan daftar skill. Kolomnya sudah ada di tabel `profiles` sejak awal tapi belum pernah
+diisi karena tidak ada form-nya. Ini yang jadi tempat mendarat hasil ekstraksi CV di bagian 4.10.
+
+Yang **diambil** dari pola profil Fiverr/Upwork: struktur yang informatif. Bio, jurusan, angkatan,
+daftar skill. Itu konteks, bukan klaim.
+
+Yang **ditolak**: semua yang isinya penilaian diri sendiri. Level skill ("Expert", "Intermediate"),
+rate per jam, paket layanan, headline jualan. Alasannya ada di bagian 5: yang dijanjikan cuma yang
+bisa dibuktikan di layar. Menaruh skill yang dinilai sendiri di sebelah Rekam Jejak yang berbasis
+transaksi nyata justru mengencerkan hal yang bikin produk ini beda. Skill boleh tampil, tapi
+sebagai daftar datar tanpa level. Yang memberi bobot ke skill itu biarkan portofolio yang bicara.
+
 ### 4.7 Chat Dalam Aplikasi
 
 Obrolan terjadi **di dalam sistem**, bukan dilempar ke WhatsApp. Ini memungkinkan negosiasi harga sebelum kesepakatan dikunci, sekaligus menjaga seluruh percakapan tetap terbaca sistem.
@@ -166,6 +239,26 @@ Unggah CV → sistem mengekstrak skill → merekomendasikan pekerjaan di tab Pro
 **Prinsip:** kesenjangan skill adalah tujuan, pekerjaan adalah jalannya. Jangan merekomendasikan yang orangnya belum sanggup, tapi juga jangan yang sudah terlalu mudah.
 
 **Privasi (wajib):** file CV mentah **dihapus** segera setelah ekstraksi. Hanya daftar skill yang disimpan. Sediakan tombol hapus data di pengaturan.
+
+**Alur yang disepakati (1 September 2026), empat langkah:**
+
+1. User mengunggah CV
+2. Sistem mengekstrak skill dan detail profil lewat proxy Edge Function
+3. **Hasil ekstraksi ditampilkan dulu ke user untuk ditinjau**, belum disimpan
+4. Setelah user menyetujui, baru masuk ke `profiles` (`skills`, `bio`, dan detail lain di 4.6)
+
+Langkah 3 bukan sekadar UX yang enak. **Itu yang bikin klaim privasinya jujur.** Dengan alur ini,
+kalimat "file CV dihapus, yang disimpan cuma skill" jadi benar-benar terjadi: file dikirim sekali,
+diekstrak, langsung dibuang, dan yang tersimpan cuma daftar yang user setujui sendiri. Kondisi
+sekarang (lihat Status Implementasi) mengklaim itu tanpa melakukannya.
+
+Alur ini juga tetap patuh pada bagian 5 "tidak mengurus CV siapa pun": CV cuma bahan masukan
+sekali pakai, bukan sesuatu yang dikelola, disimpan, atau diekspor platform.
+
+**Peringatan porsi.** Bagian 19 mengunci Career Compass sebagai fitur pendukung, karena ruang
+"CV parsing + skill gap" adalah yang paling jenuh dan menonjolkannya justru menurunkan nilai
+Orisinalitas. Bangun fiturnya sampai jujur dan berfungsi, tapi jangan jadikan ini bintang utama
+saat pitching. Bintangnya tetap mekanisme kesepakatan dan rekam jejak.
 
 ### 4.11 AI Search Assistant (fitur pendukung, opsional)
 
@@ -565,6 +658,19 @@ Tanggal hari ini saat dokumen ini ditulis: **18 Agustus 2026**. Tersisa 19 hari 
 | **4–6 Sep** | Finalisasi | Isi data contoh. Uji seluruh alur dengan dua akun. Tulis README sesuai template. Deploy ke Vercel. **Submit 6 Sep, targetkan siang bukan malam** |
 | **12–20 Sep** | Babak final | 12 Sep pengumuman finalis. Buat slide, latihan pitching 10 menit, siapkan jawaban tanya jawab. **18 Sep rekam demo cadangan.** 19 Sep kirim slide. 20 Sep babak final |
 
+**Posisi sebenarnya per 1 September 2026 (sisa 5 hari ke deadline submit):**
+
+Blok "Fitur inti" sudah selesai seluruhnya, bahkan melebihi rencana: notifikasi lintas pihak,
+unggah bukti ke Storage, dan pembersihan kode besar sudah masuk. Blok "Pelengkap" tinggal AI
+Career Compass. Dua hal dari blok "Finalisasi" sudah dikerjakan lebih awal (README ditulis ulang,
+alur diuji dengan dua akun).
+
+Yang masih menganga dan tidak boleh ditunda ke tanggal 6: **deploy**. Itu syarat wajib submit,
+bukan nilai tambah. Yang biasanya makan waktu bukan deploy-nya, tapi redirect URL Supabase Auth
+yang masih menunjuk localhost, dan rewrite SPA supaya rute seperti `/kesepakatan/xxx` tidak jadi
+404 saat di-refresh di produksi. Dua-duanya cuma ketahuan setelah deploy pertama, jadi kerjakan
+tanggal 4 atau 5.
+
 ---
 
 ## 14. PEMBAGIAN TUGAS
@@ -698,6 +804,7 @@ Bagian ini penting untuk AI yang membaca dokumen ini. Semua di bawah sudah melew
 | **Positioning "web cari kerja sampingan anak kuliahan" diterima** | Itu bagus untuk penyebaran dari mulut ke mulut. Pitching ke juri tetap mengangkat satu lapis lebih dalam (portofolio + referensi). Dua lapis penjelasan, bukan kontradiksi |
 | **Platform tidak mengurus CV pengguna** | Menghindari klaim yang tidak bisa dibuktikan ("bikin CV kamu diterima HR"). Yang diklaim cuma yang terlihat di layar |
 | **AI Search Assistant hanya menerjemahkan niat, tidak menggantikan logika filter** | LLM dipakai sesempit mungkin (ekstraksi terstruktur ke JSON filter) supaya murah, cepat, dan gampang di-fallback. Filtering/sorting tetap kode deterministik yang sudah ada. Ke juri, fitur ini diposisikan sebagai "asisten pencarian", bukan "AI job-matcher", supaya tidak tumpang tindih dengan positioning Career Compass. Keputusan diambil 29 Agustus 2026 |
+| **Skill di profil tampil tanpa level, tanpa rate, tanpa paket layanan** | Kekuatan profil Stepping Stone adalah Rekam Jejak dan Portofolio, dua-duanya berbasis bukti transaksi nyata. Menaruh penilaian diri sendiri di sebelahnya mengencerkan pembeda itu, padahal Orisinalitas dinilai 40% kumulatif. Struktur profil boleh meniru Fiverr/Upwork, bagian klaim dirinya tidak. Keputusan diambil 1 September 2026 |
 
 ---
 
@@ -705,6 +812,12 @@ Bagian ini penting untuk AI yang membaca dokumen ini. Semua di bawah sudah melew
 
 - ~~Kampus mana yang jadi target pengguna pertama (menentukan isi dropdown tag area)~~ — **SELESAI/gugur:** area sekarang input teks bebas (bukan dropdown per-kampus) dan email tidak dibatasi domain kampus, jadi aplikasi memang didesain multi-kampus dari awal (lihat bagian 4.9 dan 8)
 - Siapa di antara tiga anggota tim yang paling kuat di area apa
+- Bentuk detail form edit profil: field mana saja yang boleh diedit manual, di mana form-nya
+  (halaman Pengaturan atau Profil), dan apa yang terjadi kalau ekstraksi CV gagal atau
+  mengembalikan skill yang salah. Perlu dibahas sebelum dikerjakan
+- Di mana proxy Edge Function di-deploy dan siapa yang memegang API key Anthropic-nya
+- Apakah tombol "Bagikan WhatsApp" jadi dibuat sungguhan (butuh kolom nomor telepon di
+  `profiles`, yang berarti menyimpan data pribadi baru) atau dihapus saja dari UI
 - Nama final kategori untuk pekerjaan olah data — **hindari yang bisa jadi pintu joki tugas kuliah**, karena jurinya dosen. Contoh aman: "olah data non-akademik", "analisis data UMKM"
 - Angka pasti ambang minimum transaksi dan persentase biaya admin — **saat ini di-hardcode 5% dari harga** di RPC `select_offer` sebagai asumsi sementara, belum disepakati tim. Kalau mau ditampilkan di layar kesepakatan sebelum demo, pastikan angkanya sudah final
 - ~~Frontend Vite vs migrasi ke Next.js~~ — **SUDAH DIPUTUSKAN:** tetap di Vite. Tidak ada server custom (Next.js API Routes/Vercel serverless functions) yang dibangun — logika bisnis dipindah ke Postgres RPC functions di Supabase (lihat bagian 7 dan 8). **Catatan buat AI Search Assistant (4.11) kalau jadi dikerjakan:** RPC Postgres tidak bisa memanggil API eksternal (Claude API) dengan aman, jadi proxy tetap butuh lapisan terpisah — opsi paling ringan sesuai keputusan ini adalah Supabase Edge Function (bukan Vercel serverless function seperti draf awal 11.6), supaya tetap satu ekosistem dengan Supabase yang sudah dipakai

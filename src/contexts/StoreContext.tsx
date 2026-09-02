@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import type { Agreement, Job, Message, Offer, Thread, User } from '../types';
 import { useAuth } from './AuthContext';
 import * as api from '../lib/api';
+import type { ProfileInput } from '../lib/api';
 
 export interface NewJobInput {
   type: Job['type'];
@@ -41,6 +42,7 @@ interface StoreValue {
   cancelAgreement: (agreementId: string) => Promise<void>;
   reportUnpaid: (agreementId: string) => Promise<void>;
   sendMessage: (threadId: string, text: string) => Promise<void>;
+  updateProfile: (input: ProfileInput) => Promise<void>;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -61,6 +63,18 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
     async function load() {
       setLoading(true);
       try {
+        // Saat logout, userId jadi null. Tanpa pembersihan ini, data pemilik sesi sebelumnya
+        // tetap tertinggal di memori dan sempat terlihat oleh siapa pun yang membuka aplikasi
+        // di perangkat yang sama sesudahnya.
+        if (!userId) {
+          setCurrentUser(null);
+          setJobs([]);
+          setOffers([]);
+          setAgreements([]);
+          setThreads([]);
+          setUserCache({});
+          return;
+        }
         if (userId) {
           const [user, jobsList, offersList, agreementsList, threadsList] = await Promise.all([
           api.fetchUser(userId),
@@ -208,6 +222,15 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
 
       sendMessage: async (threadId, text) => {
         await api.sendMessage(threadId, text);
+      },
+
+      // Hasilnya ditulis balik ke currentUser dan ke userCache sekaligus, supaya profil yang
+      // baru disimpan langsung terlihat di halaman Profil tanpa perlu refresh, termasuk saat
+      // halaman itu membaca lewat getUser dan bukan lewat currentUser.
+      updateProfile: async (input) => {
+        const updated = await api.updateProfile(input);
+        setCurrentUser(updated);
+        setUserCache((prev) => ({ ...prev, [updated.id]: updated }));
       }
     };
   }, [agreements, currentUser, ensureAgreement, ensureUser, getUser, jobs, loading, offers, threads]);

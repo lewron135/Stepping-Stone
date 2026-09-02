@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   BellIcon,
   ChevronsLeftIcon,
@@ -16,6 +16,7 @@ import {
   UserIcon } from
 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLogout } from '../../hooks/useLogout';
 import { useNotifications } from '../../hooks/useNotifications';
 import { cn } from '../../utils/cn';
 
@@ -53,7 +54,7 @@ cn(
 );
 
 export function SidebarRail() {
-  const navigate = useNavigate();
+  const logout = useLogout();
   const { theme, toggleTheme } = useTheme();
   const { unreadCount, chatUnreadCount } = useNotifications();
 
@@ -125,7 +126,7 @@ export function SidebarRail() {
           }
           {expanded ? <span className="truncate">{theme === 'dark' ? 'Mode terang' : 'Mode gelap'}</span> : null}
         </button>
-        <button type="button" onClick={() => navigate('/')} className={itemClass(false)}>
+        <button type="button" onClick={() => void logout()} className={itemClass(false)}>
           <LogOutIcon className="h-4 w-4 shrink-0" aria-hidden />
           {expanded ? <span className="truncate">Logout</span> : null}
         </button>

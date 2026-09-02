@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .env
+
+# Layanan ekstraksi CV (Python)
+__pycache__/
+*.py[cod]
+.venv
+venv/

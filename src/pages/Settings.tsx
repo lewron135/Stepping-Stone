@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
-import { Field } from '../components/ui/Field';
-import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { ProfileForm } from '../components/profile/ProfileForm';
 import { Switch } from '../components/ui/Switch';
-import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useAuth } from '../contexts/AuthContext';
+import { useLogout } from '../hooks/useLogout';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { cn } from '../utils/cn';
@@ -40,8 +40,8 @@ function SettingsSection({ title, children }: {title: string;children: React.Rea
 }
 
 export function Settings() {
-  const navigate = useNavigate();
-  const currentUser = useCurrentUser();
+  const { session } = useAuth();
+  const logout = useLogout();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [publicProfile, setPublicProfile] = useState(true);
@@ -54,6 +54,10 @@ export function Settings() {
       <p className="mt-1.5 text-[13.5px] text-muted">
         Tema, akun, privasi, dan kontrol data kamu.
       </p>
+
+      <SettingsSection title="Profil">
+        <ProfileForm email={session?.user.email ?? ''} />
+      </SettingsSection>
 
       <SettingsSection title="Tampilan">
         <Row title="Tema" description="Mode gelap memakai hitam pekat, cocok dipakai malam.">
@@ -75,22 +79,6 @@ export function Settings() {
             )}
           </div>
         </Row>
-      </SettingsSection>
-
-      <SettingsSection title="Akun">
-        <div className="flex flex-col gap-5 px-4 py-4">
-          <Field label="Nama" htmlFor="name">
-            <Input id="name" defaultValue={currentUser.name} />
-          </Field>
-          <Field label="Email kampus" htmlFor="email" hint="Dipakai untuk masuk, tidak tampil publik.">
-            <Input id="email" type="email" defaultValue={`${currentUser.handle}@kampus.ac.id`} />
-          </Field>
-          <div className="flex justify-end">
-            <Button size="sm" onClick={() => toast('Perubahan disimpan')}>
-              Simpan perubahan
-            </Button>
-          </div>
-        </div>
       </SettingsSection>
 
       <SettingsSection title="Privasi & visibilitas">
@@ -149,7 +137,7 @@ export function Settings() {
           </Link>
         </Row>
         <Row title="Logout" description="Keluar dari akun di perangkat ini.">
-          <Button size="sm" variant="secondary" className="shrink-0" onClick={() => navigate('/')}>
+          <Button size="sm" variant="secondary" className="shrink-0" onClick={() => void logout()}>
             Logout
           </Button>
         </Row>
