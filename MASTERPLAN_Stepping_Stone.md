@@ -18,7 +18,7 @@ Sebelum memberi saran apa pun, pahami hal berikut:
 
 ## STATUS IMPLEMENTASI SEBENARNYA
 
-> Diperbarui **1 September 2026**. Bagian ini dibuat supaya AI yang membaca dokumen ini tidak
+> Diperbarui **4 September 2026**. Bagian ini dibuat supaya AI yang membaca dokumen ini tidak
 > menyimpulkan sebuah fitur sudah jalan hanya karena halamannya ada. Perbarui bagian ini setiap
 > kali ada perubahan besar.
 
@@ -28,35 +28,41 @@ Daftar dan masuk, dua tab feed dengan filter dan pencarian, pasang pekerjaan den
 slot jumlah orang, ajukan penawaran, pilih penawaran, chat polling, siklus penuh kesepakatan
 (setuju, terkunci, tandai selesai, unggah bukti, konfirmasi, testimoni), laporan belum dibayar,
 batas 2 hari konfirmasi, rekam jejak dua arah, profil publik `/u/:handle`, portofolio, notifikasi
-delapan event, tema terang dan gelap.
+delapan event, tema terang dan gelap, form edit profil, dan logout yang benar-benar mengakhiri sesi.
 
 Backend memakai Supabase: 7 tabel dengan RLS, 11 fungsi RPC, 5 trigger, dan satu bucket Storage
-bernama `bukti-kerja`. File migrasi ada di `supabase/migrations/`.
+bernama `bukti-kerja`. File migrasi ada di `supabase/migrations/`, sampai `0006_update_profile.sql`.
+
+Aplikasi sudah ter-deploy di Vercel dan bisa diakses publik.
+
+### Sudah jalan tapi belum diuji dua akun di produksi
+
+| Fitur | Keadaannya |
+|---|---|
+| Ekstraksi CV, `api/extract-cv.py` | Nyata. PDF dibaca di memori dengan pypdf, tanpa spaCy supaya muat di batas ukuran function Vercel. Hasilnya masuk form profil sebagai draf. Sudah diuji dengan CV asli, 30 skill dalam 3 detik |
+| Brief Assistant, `api/draft-brief.py` | Nyata, memakai Claude Haiku 4.5. Sudah diuji lewat panggilan langsung ke model dan lewat HTTP untuk lapis penjaganya. Belum diuji dari browser dengan sesi login |
+| Search Assistant, `api/parse-search.py` | Sama seperti di atas. Kotaknya baru muncul di panel filter versi desktop, belum terjangkau di layar kecil |
 
 ### Masih tampilan kosong, tombolnya belum menyimpan apa pun
 
 | Tempat | Kenyataannya |
 |---|---|
-| Ekstraksi CV di `pages/CareerCompass.tsx` | `setTimeout` 1,1 detik lalu menampilkan daftar skill yang di-hardcode. Tidak ada ekstraksi, tidak ada API. **Copy-nya mengklaim "File CV sudah dihapus dari server" padahal file itu tidak pernah dikirim ke server mana pun.** Ini risiko di Tanya Jawab juri, karena bagian 15 menandai etika AI sebagai perhatian khusus |
-| Tombol "Simpan perubahan" di `pages/Settings.tsx` | Cuma memunculkan toast. Tidak menyimpan apa pun ke database |
-| Tombol Logout di Navbar, Sidebar, dan SidebarRail | Cuma `navigate('/')`. Fungsi `signOut` ada di `AuthContext` tapi **tidak pernah dipanggil dari mana pun**, jadi sesinya tetap hidup dan user langsung masuk lagi begitu membuka halaman terlindungi |
-| Tombol "Bagikan WhatsApp" di halaman Kesepakatan | Cuma toast. Tidak ada nomor yang benar-benar dibagikan |
+| Tombol "Bagikan WhatsApp" di halaman Kesepakatan | Cuma toast. Tidak ada nomor yang benar-benar dibagikan. Keputusannya masih terbuka di bagian 20: dibuat sungguhan berarti menyimpan nomor telepon, yaitu data pribadi baru |
 
 Rekomendasi Career Compass sendiri **nyata**, bukan palsu. Logikanya ada di `utils/compass.ts`,
-menghitung dari kategori yang sudah dibuktikan di portofolio dan harga proyek terbesar. Yang belum
-nyata cuma bagian ekstraksi CV-nya.
+menghitung dari kategori yang sudah dibuktikan di portofolio dan harga proyek terbesar.
 
 ### Belum ada sama sekali
 
-- **Deploy dan hosting.** Ini syarat wajib submit penyisihan, belum dikerjakan
-- **AI Search Assistant** (bagian 4.11) dan **proxy Edge Function** yang jadi prasyaratnya
-- **Form edit profil.** Kolom `bio`, `skills`, `faculty`, `major`, `year` sudah ada di tabel
-  `profiles` dan di tipe `User`, tapi tidak ada satu pun UI untuk mengisinya. Saat daftar cuma
-  nama dan kampus yang dikumpulkan, sisanya `null`
 - **Definisi SQL untuk skema tabel awal dan 11 fungsi RPC.** Semuanya dibuat langsung di dashboard
   Supabase sebelum tim memakai file migrasi, jadi repo ini belum bisa dipakai membangun project
   Supabase dari nol
 - **Automated test** dalam bentuk apa pun
+- **Career Compass memakai skill.** `compass.ts` masih hanya melihat portofolio, padahal skill
+  sekarang sudah bisa diisi. Untuk pengguna baru yang portofolionya kosong, rekomendasinya
+  praktis cuma urut harga
+- **Batas pemakaian AI yang persisten.** Batasnya sekarang di memori instance, jadi ikut hilang
+  saat Vercel mendaur ulang instance. Versi yang bertahan butuh tabel di Supabase
 - Komentar di postingan dan rekap pendapatan (dua-duanya dari daftar "Sebaiknya Ada")
 
 ### Catatan cara kerja dengan Supabase
@@ -281,7 +287,7 @@ saat pitching. Bintangnya tetap mekanisme kesepakatan dan rekam jejak.
 
 **Prioritas:** masuk daftar "Sebaiknya Ada" (lihat bagian 10), dikerjakan Orang C setelah Career Compass dan fitur wajib lain selesai. Kalau waktu mepet menjelang 3 September, ini yang pertama dipotong — bukan Career Compass, karena Career Compass sudah lebih dulu direncanakan dan masuk penilaian dokumentasi.
 
-**Status implementasi saat ini: belum dikerjakan.** Tim masih fokus membangun frontend dulu — bagian ini murni catatan rencana supaya konteksnya tidak hilang sebelum dieksekusi.
+**Status implementasi saat ini: sudah dikerjakan** (4 September 2026). Ada di `api/parse-search.py` dan kotak pencarian feed, memakai Claude Haiku 4.5 dengan keluaran terstruktur lewat tool use. Fallback pencocokan kata sudah terpasang. Bersamanya lahir satu fitur yang tidak ada di rencana awal, Brief Assistant, yang menumpang fondasi proxy yang sama. Desain keduanya ada di `docs/superpowers/specs/2026-09-04-fitur-llm-design.md`.
 
 ---
 
@@ -812,10 +818,12 @@ Bagian ini penting untuk AI yang membaca dokumen ini. Semua di bawah sudah melew
 
 - ~~Kampus mana yang jadi target pengguna pertama (menentukan isi dropdown tag area)~~ — **SELESAI/gugur:** area sekarang input teks bebas (bukan dropdown per-kampus) dan email tidak dibatasi domain kampus, jadi aplikasi memang didesain multi-kampus dari awal (lihat bagian 4.9 dan 8)
 - Siapa di antara tiga anggota tim yang paling kuat di area apa
-- Bentuk detail form edit profil: field mana saja yang boleh diedit manual, di mana form-nya
-  (halaman Pengaturan atau Profil), dan apa yang terjadi kalau ekstraksi CV gagal atau
-  mengembalikan skill yang salah. Perlu dibahas sebelum dikerjakan
-- Di mana proxy Edge Function di-deploy dan siapa yang memegang API key Anthropic-nya
+- ~~Bentuk detail form edit profil dan apa yang terjadi kalau ekstraksi CV meleset~~ —
+  **SELESAI:** form ada di halaman Profil lewat `ProfileForm`, menyimpan lewat RPC
+  `update_profile` (migrasi 0006). Hasil ekstraksi CV masuk sebagai draf ke form yang sama,
+  jadi kalau modelnya meleset, membetulkannya sama saja dengan mengisi form biasa. `handle`
+  sengaja tidak bisa diubah karena dipakai sebagai alamat profil publik
+- ~~Di mana proxy Edge Function di-deploy dan siapa yang memegang API key Anthropic-nya~~ — **SELESAI:** proxy berupa serverless function Python di folder `api/` yang ikut ter-deploy bersama frontend di Vercel, bukan Supabase Edge Function. Alasannya tidak menambah CLI baru dan tidak bergantung pada role Supabase yang belum tentu Owner. `ANTHROPIC_API_KEY` disimpan sebagai Environment Variable di Vercel, tanpa awalan `VITE_` supaya tidak ikut masuk ke bundel browser
 - Apakah tombol "Bagikan WhatsApp" jadi dibuat sungguhan (butuh kolom nomor telepon di
   `profiles`, yang berarti menyimpan data pribadi baru) atau dihapus saja dari UI
 - Nama final kategori untuk pekerjaan olah data — **hindari yang bisa jadi pintu joki tugas kuliah**, karena jurinya dosen. Contoh aman: "olah data non-akademik", "analisis data UMKM"

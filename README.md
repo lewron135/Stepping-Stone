@@ -3,7 +3,7 @@
   # Stepping Stone
   ### Kerja Kampus, Kesepakatan Jelas, Portofolio Nyata
 
-  [![Live Demo](https://img.shields.io/badge/Live_Demo-Belum_Dirilis-lightgrey?style=for-the-badge)]()
+  [![Live Demo](https://img.shields.io/badge/Live_Demo-Online-2ea44f?style=for-the-badge)](https://stepping-stone-eight.vercel.app)
   [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/lewron135/Stepping-Stone)
   [![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
@@ -65,6 +65,9 @@ Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance
 - **Track Record dan Profil Publik** menampilkan statistik pekerjaan selesai, dibatalkan, dan laporan belum dibayar, plus galeri portofolio yang bisa dilihat publik di `/u/:handle`.
 - **Laporan Belum Dibayar** sebagai mekanisme perlindungan pekerja, tercatat permanen di track record klien.
 - **Batas 2 Hari Konfirmasi** membuat pekerjaan tetap masuk track record walau klien tidak merespons.
+- **Isi Profil dari CV** membaca berkas PDF di server, mengambil daftar skill, lalu menyerahkannya ke form profil sebagai draf. Berkasnya diproses di memori dan tidak pernah disimpan, dan yang tersimpan hanya yang pengguna setujui.
+- **Brief Assistant** menyusun draf ruang lingkup, hasil akhir, dan tenggat dari satu kalimat di form Pasang Pekerjaan. Hanya kolom kosong yang diisi, dan hasilnya ditandai draf sampai pengguna mengeditnya.
+- **Search Assistant** menerjemahkan kalimat bebas di feed jadi filter terstruktur, yang lalu dijalankan logika filter biasa. Kalau asisten gagal, pencarian kata tetap berfungsi.
 - **Mode Terang dan Gelap** yang didesain setara, bisa diganti kapan saja.
 
 ---
@@ -92,6 +95,8 @@ Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance
 | Logika bisnis | 11 fungsi RPC PostgreSQL, dipanggil lewat `supabase.rpc(...)` |
 | Otomasi | 5 trigger PostgreSQL (notifikasi, auto-agree, auto-lock, pagar batas waktu) |
 | Penyimpanan file | Supabase Storage, bucket publik `bukti-kerja` |
+| Serverless function | Python di folder `api/`, dijalankan Vercel. Ekstraksi CV dan dua asisten AI |
+| Model AI | Claude Haiku 4.5 lewat Anthropic Messages API, keluaran terstruktur dengan tool use |
 
 ### Alasan Pemilihan Teknologi
 
@@ -107,7 +112,9 @@ Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance
 
 ## Arsitektur Sistem
 
-Stepping Stone adalah Single Page Application yang berbicara langsung ke Supabase. Tidak ada server aplikasi di tengah. Yang menjaga aturan main adalah database itu sendiri, lewat Row Level Security, fungsi RPC, dan trigger.
+Stepping Stone adalah Single Page Application yang berbicara langsung ke Supabase. Yang menjaga aturan main adalah database itu sendiri, lewat Row Level Security, fungsi RPC, dan trigger.
+
+Satu-satunya kode server ada di folder `api/`, berupa beberapa serverless function Python. Itu bukan server aplikasi: tidak ada logika bisnis di sana, dan tidak ada yang menyentuh tabel domain. Fungsi-fungsi itu ada karena dua hal yang memang tidak bisa dikerjakan di browser, yaitu membaca berkas PDF dan memegang API key Anthropic. Kalau API key ditaruh di kode frontend, siapa pun bisa membacanya lewat DevTools.
 
 ```mermaid
 flowchart TB
@@ -121,6 +128,9 @@ flowchart TB
     F --> H["Trigger PostgreSQL<br/>notifikasi, auto-lock, pagar batas waktu"]
     H --> I["Tabel notifications"]
     E --> I
+    A --> J["Vercel Functions (api/)<br/>ekstraksi CV, Brief & Search Assistant"]
+    J --> K["Anthropic Claude Haiku 4.5"]
+    J --> L["Supabase Auth<br/>verifikasi sesi pemanggil"]
 ```
 
 ### Prinsip yang Dipegang
@@ -187,6 +197,7 @@ Folder `supabase/migrations/` berisi perubahan skema yang bisa dijalankan ulang 
 | `0003_notification_triggers.sql` | Trigger untuk delapan event siklus hidup kesepakatan |
 | `0004_completion_timeout_guard.sql` | Pagar sisi server untuk batas 2 hari konfirmasi |
 | `0005_storage_bukti_kerja.sql` | Bucket `bukti-kerja` beserta policy penyimpanan |
+| `0006_update_profile.sql` | Fungsi `update_profile` untuk menyimpan detail profil dan skill |
 
 ---
 
@@ -223,9 +234,20 @@ Isi `.env` dengan nilai dari Supabase Dashboard, menu Project Settings lalu API.
 ```
 VITE_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=
+
+# Dikosongkan saat sudah di Vercel. Isi hanya untuk pengujian lokal.
+VITE_CV_EXTRACT_URL=
+VITE_AI_BASE_URL=
+
+# Dibaca serverless function di sisi server, tidak pernah sampai ke browser.
+ANTHROPIC_API_KEY=
 ```
 
 Anon key aman berada di sisi browser karena setiap tabel dilindungi Row Level Security. Jangan pernah menaruh `service_role` key di file ini.
+
+`ANTHROPIC_API_KEY` sengaja **tanpa** awalan `VITE_`. Vite menanamkan setiap variabel berawalan `VITE_` ke dalam bundel JavaScript yang dikirim ke browser, jadi awalan itu akan membocorkan key ke siapa pun yang membuka DevTools. Aplikasi tetap berjalan penuh tanpa key ini, hanya dua fitur asisten yang mati dan membalas apa adanya.
+
+Dua asisten AI juga menolak permintaan dari pengunjung yang belum masuk, jadi endpoint berbayarnya tidak bisa dipakai siapa saja yang menemukan alamatnya.
 
 ### 4. Siapkan Database
 
@@ -253,7 +275,11 @@ npm run build      # build produksi
 npm run preview    # pratinjau hasil build
 npm run lint       # ESLint
 npx tsc --noEmit   # pemeriksaan tipe
+
+python3 scripts/dev_api_server.py   # menjalankan folder api/ di localhost:8787
 ```
+
+Perintah terakhir dibutuhkan hanya kalau kamu ingin menguji ekstraksi CV atau kedua asisten AI di laptop. Server itu menjalankan handler yang sama persis dengan yang nanti dijalankan Vercel, jadi tidak ada logika yang ditulis dua kali. Setelah jalan, isi `VITE_CV_EXTRACT_URL` dan `VITE_AI_BASE_URL` di `.env` seperti dicontohkan di file `.env.example`.
 
 ### Alur Pengguna
 
@@ -277,6 +303,9 @@ Jika klien tidak merespons dalam 2 hari sejak bukti dikirim, kesepakatan berubah
 | **Notifikasi dari trigger, bukan diturunkan di client** | Bertahan lintas device dan refresh, tahan race condition, dan tidak kehilangan informasi siapa pelaku sebenarnya. |
 | **Bucket bukti kerja bersifat publik** | Bukti yang sudah dikonfirmasi otomatis jadi entri portofolio yang memang ditampilkan terbuka. Bucket privat akan memaksa setiap tampilan portofolio meminta signed URL yang bisa kedaluwarsa. |
 | **Tabel `notifications` tanpa policy insert** | Baris hanya pernah dibuat oleh trigger `security definer`, sehingga pengguna biasa tidak bisa mengarang notifikasi palsu lewat panggilan langsung ke tabel. |
+| **AI hanya menyiapkan draf, manusia yang memutuskan** | Berlaku di ketiga fitur AI. Ekstraksi CV mengisi form profil sebagai usulan, Brief Assistant mengisi kolom yang masih kosong dan menandainya draf, Search Assistant memasang filter yang bisa dibatalkan sekali klik. Tidak ada satu pun keluaran model yang tersimpan atau tampil tanpa dikonfirmasi pengguna. |
+| **Model tidak pernah menyortir daftar pekerjaan** | Search Assistant hanya menerjemahkan kalimat jadi filter, lalu logika filter yang sudah ada yang menjalankannya. Ini membuat hasilnya deterministik dan bisa diuji, jauh lebih murah, dan menghindarkan keadaan ketika model mengarang pekerjaan yang tidak ada. |
+| **Penolakan ditegakkan kode, bukan diminta lewat prompt** | Keluaran model memuat kolom niat, dan proxy di server yang membaca kolom itu lalu menolak permintaan di luar topik atau tidak pantas, termasuk permintaan joki tugas kuliah. Penolakan yang dijalankan kode jauh lebih sulit dijebol daripada penolakan yang hanya dititipkan di prompt. |
 
 ---
 
@@ -285,14 +314,17 @@ Jika klien tidak merespons dalam 2 hari sejak bukti dikirim, kesepakatan berubah
 ### Sudah Berjalan
 
 - Autentikasi, pembuatan pekerjaan, penawaran, chat, siklus penuh kesepakatan, unggah bukti, testimoni, portofolio, notifikasi, dan Career Compass.
+- Form edit profil beserta pengisian skill dari CV.
+- Brief Assistant dan Search Assistant, keduanya di atas proxy di folder `api/`.
+- Sudah ter-deploy dan bisa diakses publik.
 - Pemeriksaan tipe dan lint bersih tanpa error.
 
 ### Belum Ada
 
-- **Deployment.** Belum ada URL demo yang bisa diakses publik.
-- **Test suite.** Belum ada unit, integration, maupun end to end test.
+- **Test suite.** Belum ada unit, integration, maupun end to end test. Pengujian sejauh ini dilakukan manual dengan dua akun.
 - **Definisi SQL untuk skema awal dan 11 fungsi RPC.** Lihat catatan di bagian Instalasi.
-- **AI Search Assistant.** Direncanakan tapi belum dibangun.
+- **Batas pemakaian AI yang persisten.** Batas 10 panggilan per 10 menit per pengguna disimpan di memori instance, jadi ikut hilang saat instance didaur ulang. Cukup untuk menahan pemakaian berlebihan yang wajar, belum cukup untuk menahan penyalahgunaan yang disengaja.
+- **Asisten pencarian di layar kecil.** Kotaknya baru muncul di panel filter versi desktop.
 
 ---
 
