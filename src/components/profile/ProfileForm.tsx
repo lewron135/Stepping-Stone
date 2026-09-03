@@ -1,13 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { FileUpIcon, PlusIcon, ShieldCheckIcon, XIcon } from 'lucide-react';
+import { Avatar } from '../ui/Avatar';
+import { AVATAR_PRESETS, presetValue } from '../ui/avatarPresets';
 import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
-import { extractCvProfile } from '../../lib/api';
+import { AVATAR_MAX_BYTES, extractCvProfile, uploadAvatarImage } from '../../lib/api';
 import { useStore } from '../../contexts/StoreContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useToast } from '../../contexts/ToastContext';
+import { cn } from '../../utils/cn';
 
 const BIO_MAX = 300;
 const SKILL_MAX = 30;
@@ -33,7 +36,10 @@ export function ProfileForm({ email }: {email: string;}) {
   const [bio, setBio] = useState(currentUser.bio);
   const [skills, setSkills] = useState<string[]>(currentUser.skills);
   const [skillDraft, setSkillDraft] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(currentUser.avatarUrl);
   const cvInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [reading, setReading] = useState(false);
   const [filled, setFilled] = useState<string[]>([]);
   const [errors, setErrors] = useState<Errors>({});
@@ -143,7 +149,8 @@ export function ProfileForm({ email }: {email: string;}) {
         major: major.trim(),
         year: year.trim(),
         bio: bio.trim(),
-        skills: finalSkills
+        skills: finalSkills,
+        avatarUrl
       });
       setSkills(finalSkills);
       setSkillDraft('');
@@ -156,8 +163,92 @@ export function ProfileForm({ email }: {email: string;}) {
     }
   };
 
+  const handleAvatarFile = async (file?: File) => {
+    if (!file) return;
+    if (file.size > AVATAR_MAX_BYTES) {
+      toast('Foto terlalu besar', `Ukuran maksimal ${Math.round(AVATAR_MAX_BYTES / 1024 / 1024)} MB.`);
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      // Fotonya naik ke Storage sekarang, tapi profilnya baru berubah setelah tombol Simpan
+      // ditekan, sama seperti perlakuan hasil pembacaan CV di atas.
+      setAvatarUrl(await uploadAvatarImage(file));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Coba lagi sebentar lagi.';
+      toast('Foto gagal diunggah', message);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const tile = (active: boolean) =>
+  cn(
+    'flex items-center justify-center border p-1 transition-colors duration-150 ease-out',
+    active ? 'border-ink bg-subtle' : 'border-line-strong hover:border-ink'
+  );
+
   return (
     <form className="flex flex-col gap-5 px-4 py-4" onSubmit={handleSubmit}>
+      <div className="border border-line-strong p-3.5">
+        <div className="flex flex-wrap items-center gap-3.5">
+          <Avatar name={name || currentUser.name} src={avatarUrl} size="lg" />
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-semibold tracking-tight text-ink">Foto profil</p>
+            <p className="mt-1 text-[12px] leading-relaxed text-muted">
+              Pilih salah satu di bawah, atau unggah fotomu sendiri.
+            </p>
+          </div>
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => {
+              handleAvatarFile(event.target.files?.[0]);
+              event.target.value = '';
+            }} />
+          
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            loading={uploadingAvatar}
+            onClick={() => avatarInputRef.current?.click()}>
+            
+            Unggah foto
+          </Button>
+        </div>
+
+        <div className="mt-3.5 flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            aria-label="Pakai inisial nama"
+            aria-pressed={!avatarUrl}
+            onClick={() => setAvatarUrl('')}
+            className={tile(!avatarUrl)}>
+            
+            <Avatar name={name || currentUser.name} size="md" className="border-0" />
+          </button>
+
+          {AVATAR_PRESETS.map((preset) => {
+            const value = presetValue(preset.id);
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                aria-label={`Pakai avatar ${preset.id}`}
+                aria-pressed={avatarUrl === value}
+                onClick={() => setAvatarUrl(value)}
+                className={tile(avatarUrl === value)}>
+                
+                <Avatar name={name} src={value} size="md" className="border-0" />
+              </button>);
+
+          })}
+        </div>
+      </div>
       <div className="border border-dashed border-line-strong p-3.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">

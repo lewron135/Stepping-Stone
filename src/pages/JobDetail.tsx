@@ -235,7 +235,7 @@ export function JobDetail() {
           <div className="flex flex-col gap-5 lg:sticky lg:top-20">
             <section className="border border-line bg-surface" aria-labelledby="poster-heading">
               <div className="flex items-start gap-3 p-4">
-                <Avatar name={poster.name} size="lg" />
+                <Avatar name={poster.name} src={poster.avatarUrl} size="lg" />
                 <div className="min-w-0">
                   <h2 id="poster-heading" className="text-[15px] font-bold tracking-tight text-ink">
                     {poster.name}

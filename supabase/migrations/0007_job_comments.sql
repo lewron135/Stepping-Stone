@@ -13,12 +13,29 @@
 
 -- 1. Tipe notifikasi baru.
 --
--- Check constraint di migrasi 0001 ditulis inline di kolom, jadi namanya yang dihasilkan
--- Postgres adalah notifications_type_check. Dijatuhkan lalu dipasang ulang dengan satu
--- nilai tambahan, bukan diubah di tempat, karena Postgres tidak punya ALTER CONSTRAINT
--- untuk check.
+-- Check constraint di migrasi 0001 ditulis inline di kolom, jadi namanya dibuatkan Postgres
+-- sendiri. Nama itu dicari lewat katalog, bukan ditebak: kalau ditebak dan tebakannya meleset,
+-- baris drop-nya diam saja tanpa error, constraint lama tetap hidup, dan komentar akan gagal
+-- dikirim dengan pesan check violation yang membingungkan.
+--
+-- Dijatuhkan lalu dipasang ulang, bukan diubah di tempat, karena Postgres tidak punya
+-- ALTER CONSTRAINT untuk check.
 
-alter table notifications drop constraint if exists notifications_type_check;
+do $$
+declare
+  v_name text;
+begin
+  for v_name in
+    select conname
+    from pg_constraint
+    where conrelid = 'notifications'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) like '%offer_received%'
+  loop
+    execute format('alter table notifications drop constraint %I', v_name);
+  end loop;
+end $$;
+
 alter table notifications add constraint notifications_type_check check (
   type in (
     'offer_received',

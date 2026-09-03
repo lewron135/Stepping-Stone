@@ -12,6 +12,7 @@ export interface ProfileInput {
   year: string;
   bio: string;
   skills: string[];
+  avatarUrl: string;
 }
 
 function mapJob(row: any): Job {
@@ -111,6 +112,11 @@ const PROOF_BUCKET = 'bukti-kerja';
 export const PROOF_MAX_BYTES = 5 * 1024 * 1024;
 export const PROOF_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+// Foto profil tampil paling besar 80 piksel, jadi batasnya jauh lebih kecil daripada bukti
+// kerja. Angkanya sama dengan yang ditetapkan bucket di migrasi 0008.
+export const AVATAR_BUCKET = 'avatar';
+export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
 // Nama file harus diawali folder berisi id pemiliknya, karena policy RLS di storage.objects
 // mencocokkan folder pertama dengan auth.uid(). Kalau formatnya diubah, unggahan akan ditolak.
 export async function uploadProofImage(file: File, agreementId: string): Promise<string> {
@@ -130,6 +136,27 @@ export async function uploadProofImage(file: File, agreementId: string): Promise
   if (error) throw error;
 
   return supabase.storage.from(PROOF_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+// Formatnya harus diawali folder berisi id pemiliknya, sama seperti unggahan bukti kerja,
+// karena policy RLS di storage.objects mencocokkan folder pertama dengan auth.uid().
+export async function uploadAvatarImage(file: File): Promise<string> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+  const userId = userData.user?.id;
+  if (!userId) throw new Error('Sesi kamu sudah habis, masuk lagi untuk mengunggah foto.');
+
+  const dot = file.name.lastIndexOf('.');
+  const extension = dot > 0 ? file.name.slice(dot + 1).toLowerCase() : 'jpg';
+  const path = `${userId}/${Date.now()}.${extension}`;
+
+  const { error } = await supabase.storage.from(AVATAR_BUCKET).upload(path, file, {
+    contentType: file.type,
+    upsert: false
+  });
+  if (error) throw error;
+
+  return supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
 export async function fetchJobs(): Promise<Job[]> {
@@ -320,6 +347,7 @@ async function buildUserFromProfile(profile: any): Promise<User> {
     major: profile.major ?? '',
     year: profile.year ?? '',
     bio: profile.bio ?? '',
+    avatarUrl: profile.avatar_url ?? '',
     skills: profile.skills ?? [],
     stats: {
       completed: statsRow?.completed ?? 0,
@@ -407,7 +435,8 @@ export async function updateProfile(input: ProfileInput): Promise<User> {
     p_major: input.major,
     p_year: input.year,
     p_bio: input.bio,
-    p_skills: input.skills
+    p_skills: input.skills,
+    p_avatar_url: input.avatarUrl || null
   });
   if (error) throw error;
   return buildUserFromProfile(data);

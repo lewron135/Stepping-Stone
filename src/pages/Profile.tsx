@@ -169,7 +169,7 @@ export function Profile() {
     <div className="py-6">
       <header className="border-b border-line pb-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <Avatar name={user.name} size="xl" />
+          <Avatar name={user.name} src={user.avatarUrl} size="xl" />
           <div className="min-w-0 flex-1">
             <h1 className="text-[26px] font-bold leading-tight tracking-tightest text-ink sm:text-[32px]">
               {user.name}

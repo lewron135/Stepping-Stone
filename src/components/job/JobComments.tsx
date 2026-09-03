@@ -111,7 +111,7 @@ export function JobComments({ jobId, posterId }: JobCommentsProps) {
           const author = getUser(comment.authorId);
           return (
             <li key={comment.id} className="flex gap-3 py-4">
-                <Avatar name={author?.name ?? 'Pengguna'} size="sm" />
+                <Avatar name={author?.name ?? 'Pengguna'} src={author?.avatarUrl} size="sm" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     {author ?

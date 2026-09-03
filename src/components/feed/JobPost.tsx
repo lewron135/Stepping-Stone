@@ -40,7 +40,7 @@ export function JobPost({ job, onOffer, compact }: JobPostProps) {
   return (
     <article className="group px-4 py-5 transition-colors duration-150 ease-out hover:bg-subtle/60 sm:px-5">
       <div className="flex items-center gap-2 text-[12.5px] text-muted">
-        <Avatar name={poster.name} size="sm" />
+        <Avatar name={poster.name} src={poster.avatarUrl} size="sm" />
         <Link
           to={`/u/${poster.handle}`}
           className="font-semibold text-ink transition-opacity duration-150 ease-out hover:opacity-70">

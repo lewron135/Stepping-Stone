@@ -28,7 +28,12 @@ export function AgreementListCard({ agreement, perspective }: AgreementListCardP
         <div className="min-w-0">
           <p className="text-[14.5px] font-bold leading-snug tracking-tight text-ink">{job.title}</p>
           <p className="mt-1.5 flex items-center gap-2 text-[12px] text-muted">
-            <Avatar name={counterpart.name} size="sm" className="h-5 w-5 text-[9px]" />
+            <Avatar
+              name={counterpart.name}
+              src={counterpart.avatarUrl}
+              size="sm"
+              className="h-5 w-5 text-[9px]" />
+            
             {perspective === 'worker' ? 'Klien' : 'Pekerja'} · {counterpart.name}
           </p>
         </div>
