@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import type {
-  Agreement, AppNotification, Job, Message, Offer, Thread, User, PortfolioItem } from
+  Agreement, AppNotification, Job, Message, Offer, Thread, User, PortfolioItem, WorkType } from
 '../types';
 import type { NewJobInput } from '../contexts/StoreContext';
 
@@ -507,5 +507,78 @@ export function pollMessages(
   return () => {
     stopped = true;
     clearInterval(id);
+  };
+}
+
+// Asisten AI. Dua endpoint ini yang memegang ANTHROPIC_API_KEY di sisi server, jadi browser
+// tidak pernah menyentuh key-nya (masterplan 11.6). Alamatnya lewat env dengan alasan yang
+// sama seperti CV_EXTRACT_URL di atas: pakai || bukan ??, karena env var yang didaftarkan di
+// Vercel tapi dibiarkan kosong bernilai string kosong, bukan undefined.
+const AI_BASE_URL = import.meta.env.VITE_AI_BASE_URL || '';
+
+// Sama dengan MAX_INPUT_CHARS di api/_llm.py. Dibatasi di dua sisi supaya user melihat batasnya
+// sebelum mengirim, bukan setelah teksnya dipotong diam-diam.
+export const AI_MAX_CHARS = 500;
+
+// Semuanya usulan yang belum tersimpan. Kolom yang tidak lolos pemeriksaan server datang
+// sebagai string kosong, dan kolom kosong memang sengaja tidak mengubah apa pun di form.
+export interface BriefDraft {
+  type: WorkType | '';
+  category: string;
+  title: string;
+  scope: string;
+  deliverable: string;
+  deadline: string;
+}
+
+export interface SearchFilters {
+  tab: WorkType | 'semua' | '';
+  kategori: string;
+  area: string;
+  hargaMaks: number | null;
+}
+
+async function callAssistant<T>(path: string, body: Record<string, unknown>): Promise<T> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) {
+    throw new Error('Masuk dulu untuk memakai asisten.');
+  }
+
+  const response = await fetch(`${AI_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body)
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error ?? 'Asisten sedang tidak bisa dihubungi.');
+  }
+  return payload as T;
+}
+
+export async function draftBrief(text: string): Promise<BriefDraft> {
+  const payload = await callAssistant<Partial<BriefDraft>>('/api/draft-brief', { text });
+  return {
+    type: payload.type === 'kerja-cepat' || payload.type === 'proyek' ? payload.type : '',
+    category: payload.category ?? '',
+    title: payload.title ?? '',
+    scope: payload.scope ?? '',
+    deliverable: payload.deliverable ?? '',
+    deadline: payload.deadline ?? ''
+  };
+}
+
+// `areas` adalah area yang benar-benar ada di feed saat ini. Dikirim supaya model memilih dari
+// yang nyata, bukan mengarang nama tempat yang tidak akan cocok dengan pekerjaan mana pun.
+export async function parseSearch(text: string, areas: string[]): Promise<SearchFilters> {
+  const payload = await callAssistant<Partial<SearchFilters>>('/api/parse-search', { text, areas });
+  const tab = payload.tab;
+  return {
+    tab: tab === 'kerja-cepat' || tab === 'proyek' || tab === 'semua' ? tab : '',
+    kategori: payload.kategori ?? '',
+    area: payload.area ?? '',
+    hargaMaks: typeof payload.hargaMaks === 'number' && payload.hargaMaks > 0 ? payload.hargaMaks : null
   };
 }
