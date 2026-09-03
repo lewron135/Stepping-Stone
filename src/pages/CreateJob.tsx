@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon } from 'lucide-react';
+import { AlertCircleIcon, ArrowLeftIcon, SparklesIcon } from 'lucide-react';
 import type { Job, WorkType } from '../types';
 import { Button } from '../components/ui/Button';
 import { Field } from '../components/ui/Field';
@@ -12,6 +12,7 @@ import { useStore } from '../contexts/StoreContext';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { useToast } from '../contexts/ToastContext';
 import { KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../data/reference';
+import { AI_MAX_CHARS, draftBrief } from '../lib/api';
 import { cn } from '../utils/cn';
 
 interface FormState {
@@ -48,9 +49,83 @@ export function CreateJob() {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
 
+  // Kotak asisten sengaja hidup di luar FormState dan di luar validasi. Form harus tetap bisa
+  // diisi tangan persis seperti sebelum fitur ini ada, termasuk saat asisten mati.
+  const [intent, setIntent] = useState('');
+  const [drafting, setDrafting] = useState(false);
+  const [assistError, setAssistError] = useState('');
+  const [drafted, setDrafted] = useState<Array<keyof FormState>>([]);
+
+  // Dibaca setelah await, supaya draf tidak menimpa kolom yang baru diketik user selama
+  // asisten masih berpikir. Nilai dari closure sudah basi saat balasan datang.
+  const formRef = useRef(form);
+  formRef.current = form;
+
   const set = <K extends keyof FormState,>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
+    // Begitu user menyentuh kolomnya, itu bukan draf asisten lagi.
+    setDrafted((prev) => prev.filter((field) => field !== key));
+  };
+
+  // Penanda draf menumpang slot counter milik Field, jadi tidak ada komponen yang perlu diubah.
+  const draftMark = (field: keyof FormState) =>
+  drafted.includes(field) ? 'draf dari asisten' : undefined;
+
+  const runAssistant = async () => {
+    const text = intent.trim();
+    if (!text || drafting) return;
+
+    setDrafting(true);
+    setAssistError('');
+    try {
+      const draft = await draftBrief(text);
+      const prev = formRef.current;
+      const next = { ...prev };
+      const marks: Array<keyof FormState> = [];
+
+      // Jenis pekerjaan cuma ikut berubah bersama kategori, karena jenis itu yang menentukan
+      // isi dropdown kategori. Mengubahnya sendirian bisa membuat kategori pilihan user
+      // hilang dari daftar.
+      if (!prev.category && draft.category) {
+        if (draft.type) next.type = draft.type;
+        next.category = draft.category;
+        marks.push('category');
+      }
+      if (!prev.title.trim() && draft.title) {
+        next.title = draft.title;
+        marks.push('title');
+      }
+      if (!prev.scope.trim() && draft.scope) {
+        next.scope = draft.scope;
+        marks.push('scope');
+      }
+      if (!prev.deliverable.trim() && draft.deliverable) {
+        next.deliverable = draft.deliverable;
+        marks.push('deliverable');
+      }
+      if (!prev.deadline && draft.deadline) {
+        next.deadline = draft.deadline;
+        marks.push('deadline');
+      }
+
+      setForm(next);
+      setDrafted(marks);
+      setErrors((prevErrors) => {
+        const nextErrors = { ...prevErrors };
+        marks.forEach((field) => delete nextErrors[field]);
+        return nextErrors;
+      });
+      if (marks.length === 0) {
+        setAssistError('Kolom brief kamu sudah terisi, jadi draf ini tidak mengubah apa pun.');
+      }
+    } catch (error) {
+      setAssistError(
+        error instanceof Error ? error.message : 'Asisten sedang tidak bisa dihubungi.'
+      );
+    } finally {
+      setDrafting(false);
+    }
   };
 
   const categories = form.type === 'kerja-cepat' ? KERJA_CEPAT_CATEGORIES : PROYEK_CATEGORIES;
@@ -139,6 +214,51 @@ export function CreateJob() {
               submit();
             }}>
             
+            <div className="border border-line-strong bg-subtle p-4">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="flex items-center gap-1.5 text-[13px] font-semibold tracking-tight text-ink">
+                  <SparklesIcon className="h-3.5 w-3.5" aria-hidden />
+                  Bantu isi brief
+                </span>
+                <span className="text-[11px] tabular-nums text-faint">
+                  {intent.length}/{AI_MAX_CHARS}
+                </span>
+              </div>
+              <p className="mt-1 text-[12px] leading-relaxed text-muted">
+                Ceritakan singkat apa yang kamu butuhkan, asisten menyusun draf brief-nya. Kamu yang
+                menyetujui atau membetulkannya sebelum diposting. Opsional, form ini tetap bisa
+                diisi tangan.
+              </p>
+              <Textarea
+                id="brief-intent"
+                className="mt-3"
+                rows={2}
+                maxLength={AI_MAX_CHARS}
+                value={intent}
+                placeholder="Contoh: butuh poster buat acara himpunan minggu depan, ukuran feed Instagram sama cetak A3"
+                onChange={(event) => setIntent(event.target.value)} />
+              
+              <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  loading={drafting}
+                  disabled={!intent.trim()}
+                  onClick={runAssistant}>
+                  
+                  {drafting ? 'Menyusun draf' : 'Buatkan draf brief'}
+                </Button>
+                <span className="text-[12px] text-muted">Kolom yang sudah kamu isi tidak diubah.</span>
+              </div>
+              {assistError ?
+              <p className="mt-2.5 flex items-center gap-1.5 text-[12px] font-medium text-danger">
+                  <AlertCircleIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {assistError}
+                </p> :
+              null}
+            </div>
+
             <fieldset>
               <legend className="mb-2.5 text-[13px] font-semibold tracking-tight text-ink">
                 Jenis pekerjaan
@@ -183,7 +303,13 @@ export function CreateJob() {
               </div>
             </fieldset>
 
-            <Field label="Kategori" htmlFor="category" required error={errors.category}>
+            <Field
+              label="Kategori"
+              htmlFor="category"
+              required
+              error={errors.category}
+              counter={draftMark('category')}>
+              
               <Select
                 id="category"
                 value={form.category}
@@ -199,7 +325,7 @@ export function CreateJob() {
               htmlFor="title"
               required
               error={errors.title}
-              counter={`${form.title.length}/80`}
+              counter={`${drafted.includes('title') ? 'draf dari asisten · ' : ''}${form.title.length}/80`}
               hint="Tulis apa yang dibutuhkan, bukan ajakan. Hindari tugas akademik.">
               
               <Input
@@ -217,7 +343,7 @@ export function CreateJob() {
               htmlFor="scope"
               required
               error={errors.scope}
-              counter={`${form.scope.length}/600`}
+              counter={`${drafted.includes('scope') ? 'draf dari asisten · ' : ''}${form.scope.length}/600`}
               hint="Jelaskan pekerjaannya, batasan, dan materi yang kamu sediakan.">
               
               <Textarea
@@ -235,6 +361,7 @@ export function CreateJob() {
               htmlFor="deliverable"
               required
               error={errors.deliverable}
+              counter={draftMark('deliverable')}
               hint="Bentuk konkret yang diserahkan, misalnya 3 poster PNG + PDF cetak.">
               
               <Input
@@ -247,7 +374,13 @@ export function CreateJob() {
             </Field>
 
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Field label="Tenggat" htmlFor="deadline" required error={errors.deadline}>
+              <Field
+                label="Tenggat"
+                htmlFor="deadline"
+                required
+                error={errors.deadline}
+                counter={draftMark('deadline')}>
+                
                 <Input
                   id="deadline"
                   type="datetime-local"

@@ -1,4 +1,6 @@
+import { SparklesIcon } from 'lucide-react';
 import type { WorkType } from '../../types';
+import { Input } from '../ui/Input';
 import { SearchInput } from '../ui/SearchInput';
 import { KERJA_CEPAT_CATEGORIES, PROYEK_CATEGORIES } from '../../data/reference';
 import { cn } from '../../utils/cn';
@@ -15,6 +17,12 @@ interface FeedFiltersProps {
   onAreaChange: (value: string) => void;
   areaOptions: string[];
   showSearch?: boolean;
+  priceMax: number | null;
+  onPriceMaxChange: (value: number | null) => void;
+  // Dipanggil saat user menekan Enter di kotak pencarian. Feed yang memutuskan apakah kalimatnya
+  // layak dikirim ke asisten.
+  onAssistantSubmit?: () => void;
+  assistantBusy?: boolean;
 }
 
 export function FeedFilters({
@@ -26,7 +34,11 @@ export function FeedFilters({
   area,
   onAreaChange,
   areaOptions,
-  showSearch = true
+  showSearch = true,
+  priceMax,
+  onPriceMaxChange,
+  onAssistantSubmit,
+  assistantBusy
 }: FeedFiltersProps) {
   const categories =
   scope === 'kerja-cepat' ?
@@ -48,15 +60,26 @@ export function FeedFilters({
     <div className="flex flex-col gap-6">
       {showSearch ?
       <div>
-          <label htmlFor="feed-search" className="sr-only">
-            Cari pekerjaan
+          <label
+          htmlFor="feed-search"
+          className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+          
+            <SparklesIcon className="h-3 w-3" aria-hidden />
+            Asisten pencarian
           </label>
           <SearchInput
           id="feed-search"
+          size="lg"
+          busy={assistantBusy}
           value={query}
           onChange={onQueryChange}
-          placeholder={scope === 'kerja-cepat' ? 'Cari kerja cepat' : 'Cari pekerjaan'} />
+          onSubmit={onAssistantSubmit}
+          placeholder="Tulis kalimat, lalu Enter" />
         
+          <p className="mt-2 text-[11px] leading-relaxed text-faint">
+            Mengetik langsung menyaring dari kata. Tulis kalimat utuh lalu tekan Enter, misalnya
+            "desain poster deket kampus di bawah 50 ribu", dan asisten yang memasangkan filternya.
+          </p>
         </div> :
       null}
 
@@ -79,6 +102,23 @@ export function FeedFilters({
             </button>
           )}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+          Harga maksimal
+        </legend>
+        <Input
+          id="feed-price-max"
+          prefix="Rp"
+          inputMode="numeric"
+          value={priceMax === null ? '' : String(priceMax)}
+          placeholder="Tanpa batas"
+          onChange={(event) => {
+            const digits = event.target.value.replace(/\D/g, '');
+            onPriceMaxChange(digits ? Number(digits) : null);
+          }} />
+        
       </fieldset>
 
       {showArea ?

@@ -1,4 +1,4 @@
-import { SearchIcon, XIcon } from 'lucide-react';
+import { Loader2Icon, SearchIcon, XIcon } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 interface SearchInputProps {
@@ -7,9 +7,23 @@ interface SearchInputProps {
   placeholder?: string;
   className?: string;
   id?: string;
+  size?: 'md' | 'lg';
+  busy?: boolean;
+  // Dipanggil saat user menekan Enter. Sengaja terpisah dari onChange, karena mengetik menyaring
+  // langsung sementara Enter memicu pekerjaan yang jauh lebih mahal.
+  onSubmit?: () => void;
 }
 
-export function SearchInput({ value, onChange, placeholder, className, id }: SearchInputProps) {
+export function SearchInput({
+  value,
+  onChange,
+  placeholder,
+  className,
+  id,
+  size = 'md',
+  busy,
+  onSubmit
+}: SearchInputProps) {
   return (
     <div
       className={cn(
@@ -23,10 +37,21 @@ export function SearchInput({ value, onChange, placeholder, className, id }: Sea
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && onSubmit) {
+            event.preventDefault();
+            onSubmit();
+          }
+        }}
         placeholder={placeholder ?? 'Cari pekerjaan'}
-        className="h-10 w-full bg-transparent text-sm text-ink placeholder:text-faint focus:outline-none [&::-webkit-search-cancel-button]:hidden" />
+        className={cn(
+          'w-full bg-transparent text-ink placeholder:text-faint focus:outline-none [&::-webkit-search-cancel-button]:hidden',
+          size === 'lg' ? 'h-12 text-[15px]' : 'h-10 text-sm'
+        )} />
       
-      {value ?
+      {busy ?
+      <Loader2Icon className="h-4 w-4 shrink-0 animate-spin text-faint" aria-label="Memproses" /> :
+      value ?
       <button
         type="button"
         onClick={() => onChange('')}
