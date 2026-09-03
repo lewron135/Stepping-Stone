@@ -47,6 +47,8 @@ export interface User {
   year: string;
   bio: string;
   skills: string[];
+  /** Penanda avatar pilihan seperti "preset:p07", alamat foto, atau kosong. */
+  avatarUrl: string;
   stats: UserStats;
   portfolio: PortfolioItem[];
 }

@@ -11,6 +11,7 @@ import {
   MessageSquareIcon,
   PhoneIcon } from
 'lucide-react';
+import type { User } from '../types';
 import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
@@ -185,15 +186,11 @@ export function AgreementPage() {
     }
   };
 
-  const partyRow = (
-  label: string,
-  name: string,
-  handle: string,
-  agreed: boolean,
-  isMe: boolean) =>
-
-  <div className="flex items-center gap-3 p-4">
-      <Avatar name={name} size="md" />
+  const partyRow = (label: string, person: User, agreed: boolean, isMe: boolean) => {
+    const { name, handle } = person;
+    return (
+      <div className="flex items-center gap-3 p-4">
+      <Avatar name={name} src={person.avatarUrl} size="md" />
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">{label}</p>
         <p className="mt-0.5 truncate text-[14px] font-semibold tracking-tight text-ink">
@@ -207,8 +204,9 @@ export function AgreementPage() {
       <Badge tone={agreed ? 'solid' : 'dashed'} icon={agreed ? <CheckIcon className="h-3 w-3" aria-hidden /> : undefined}>
         {agreed ? 'Setuju' : 'Belum setuju'}
       </Badge>
-    </div>;
+    </div>);
 
+  };
 
   return (
     <div className="py-6">
@@ -273,8 +271,8 @@ export function AgreementPage() {
           }
 
           <section className="mt-7 divide-y divide-line border border-line bg-surface" aria-label="Pihak yang terlibat">
-            {partyRow('Klien', client.name, client.handle, agreement.clientAgreed, isClient)}
-            {partyRow('Pekerja', worker.name, worker.handle, agreement.workerAgreed, isWorker)}
+            {partyRow('Klien', client, agreement.clientAgreed, isClient)}
+            {partyRow('Pekerja', worker, agreement.workerAgreed, isWorker)}
           </section>
 
           {agreement.proof ?

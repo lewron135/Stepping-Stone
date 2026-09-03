@@ -74,7 +74,7 @@ export function Navbar({ onOpenMenu }: {onOpenMenu: () => void;}) {
             {currentUser ?
             <Dropdown
               label="Menu profil"
-              trigger={<Avatar name={currentUser.name} size="sm" />}
+              trigger={<Avatar name={currentUser.name} src={currentUser.avatarUrl} size="sm" />}
               items={[
               { label: 'Profil saya', onSelect: () => navigate('/profil') },
               { label: 'Aktivitas Saya', onSelect: () => navigate('/aktivitas') },

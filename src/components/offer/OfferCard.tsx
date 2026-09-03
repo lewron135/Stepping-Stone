@@ -22,7 +22,7 @@ export function OfferCard({ offer, canSelect, onSelect, onChat }: OfferCardProps
   return (
     <div className="flex flex-col gap-3 py-4">
       <div className="flex items-start gap-3">
-        <Avatar name={worker.name} size="md" />
+        <Avatar name={worker.name} src={worker.avatarUrl} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
             <Link

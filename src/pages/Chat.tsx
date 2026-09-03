@@ -169,7 +169,7 @@ export function Chat() {
               thread.id === threadId && 'bg-subtle'
             )}>
             
-              <Avatar name={other.name} size="md" />
+              <Avatar name={other.name} src={other.avatarUrl} size="md" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <p className="truncate text-[13.5px] font-semibold tracking-tight text-ink">
@@ -266,7 +266,7 @@ export function Chat() {
               
               <ArrowLeftIcon className="h-4 w-4" aria-hidden />
             </button>
-            <Avatar name={other.name} size="sm" />
+            <Avatar name={other.name} src={other.avatarUrl} size="sm" />
             <div className="min-w-0">
               <p className="truncate text-[13.5px] font-semibold tracking-tight text-ink">
                 {other.name}
