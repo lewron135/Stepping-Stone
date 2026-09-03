@@ -339,7 +339,13 @@ export function Feed() {
           areaOptions={areaOptions}
           priceMax={priceMax}
           onPriceMaxChange={setPriceMax}
-          showSearch={false} />
+          onAssistantSubmit={() => {
+            // Panelnya ditutup dulu, karena hasil asisten muncul di daftar pekerjaan yang
+            // ada di belakangnya.
+            setFiltersOpen(false);
+            runAssistant();
+          }}
+          assistantBusy={assisting} />
         
       </Modal>
 
