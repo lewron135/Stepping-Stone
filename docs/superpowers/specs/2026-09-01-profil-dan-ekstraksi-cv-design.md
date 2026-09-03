@@ -142,3 +142,69 @@ Tidak ada test otomatis. Pembuktiannya:
 - Membuat akun Hugging Face dan Space kosong bertipe Docker.
 - Menyiapkan file CV PDF asli untuk uji, idealnya satu berbahasa Inggris dan satu Indonesia.
 - Menyimpan `ANTHROPIC_API_KEY` untuk nanti, jangan sampai masuk repo.
+
+---
+
+# LANJUTAN: Dua fitur LLM (rencana, belum dikerjakan)
+
+Ditambahkan 3 September 2026. Sesi berhenti di sini karena kuota, bukan karena buntu.
+Semua keputusan di bawah sudah disepakati Josep.
+
+## Keadaan saat ini
+
+Produksi hidup di `stepping-stone-eight.vercel.app` dan sudah diuji: rute dalam tidak 404,
+`/api/extract-cv` mengembalikan 30 skill dari CV asli dalam 3 detik. Belum ada satu pun LLM
+di produk. Ekstraksi CV dan Career Compass dua-duanya deterministik.
+
+## Bahan yang sudah siap
+
+- `ANTHROPIC_API_KEY` ada di `.env` lokal, tanpa awalan `VITE_`, sudah diuji sah lewat
+  `GET /v1/models` (200). **Belum** didaftarkan di Vercel Environment Variables.
+- Model yang dipakai: `claude-haiku-4-5-20251001`. Itu id yang benar-benar tersedia di akun
+  Josep; alias tanpa tanggal tidak muncul di daftar model akun ini.
+
+## Urutan kerja yang disepakati
+
+1. **Fondasi proxy** di `api/`, dipakai berdua (~60 menit): pemegang key, keluaran
+   terstruktur, klasifikasi niat untuk menolak pertanyaan di luar topik, batas pemakaian,
+   penanganan error, plus jalur uji lokal seperti `scripts/dev_cv_server.py`.
+2. **Brief Assistant** (~45 menit): di form Pasang Pekerjaan, user mengetik satu kalimat,
+   AI mengusulkan isi tiga kolom brief wajib (lingkup kerja, hasil akhir, tenggat), user
+   menyetujui atau membetulkan sebelum diposting. Dikerjakan lebih dulu karena menempel pada
+   pembeda produk (masterplan 4.2) dan fallback-nya gratis: form tetap bisa diisi tangan.
+3. **Search Assistant** (~75 menit): kotak pencarian bahasa natural di feed, LLM menerjemahkan
+   kalimat jadi JSON filter, filternya dijalankan kode yang sudah ada (masterplan 19). Perlu
+   tambahan filter harga maksimal di `Feed.tsx` yang belum ada, plus fallback pencocokan kata.
+
+Tuntas satu per satu, bukan paralel. Kalau waktu habis di tengah, yang sudah jadi harus utuh.
+
+## Tiga lapis penjaga (wajib, berlaku untuk dua-duanya)
+
+1. System prompt membatasi peran ke urusan pekerjaan di Stepping Stone.
+2. Keluaran terstruktur memuat kolom niat (`cari-kerja` / `di-luar-topik` / `tidak-pantas`).
+   **Kode frontend yang memutuskan** apa yang tampil, bukan model. Penolakan yang ditegakkan
+   kode jauh lebih sulit dijebol daripada penolakan yang cuma diminta lewat prompt.
+3. Batas pemakaian per pengguna dan per waktu, plus batas panjang pertanyaan. Tanpa ini,
+   endpoint publik bisa menghabiskan credit $5 tim dalam hitungan menit.
+
+## Yang sengaja TIDAK dibangun, beserta alasannya
+
+Riset Uma (asisten AI Upwork) dilakukan 3 September 2026. Kesimpulannya:
+
+| Fitur Uma | Keputusan |
+|---|---|
+| Uma Recruiter, penyaringan kandidat | Tidak. Itu jawaban untuk masalah skala jutaan lowongan, bukan puluhan |
+| Wawancara otomatis | Tidak. Pekerjaan Rp15.000 tidak butuh wawancara |
+| Draf proposal otomatis | **Tidak, dan ini penting.** Bertabrakan dengan tesis produk yang justru mengganti kata-kata manis dengan rekam jejak. Di Upwork sendiri fitur ini menghasilkan proposal seragam yang lalu disaring keluar oleh klien |
+| Bantuan menulis lowongan | Ya, itu jadi Brief Assistant di atas |
+
+Cerita AI yang dipegang ke juri: **AI di Stepping Stone tidak pernah memutuskan apa pun, dia
+cuma menyiapkan draf, dan manusia selalu jadi penentu akhir.** Pola ini sudah berlaku di
+ekstraksi CV dan akan berlaku sama di dua fitur LLM ini.
+
+## Pekerjaan lain yang masih terbuka
+
+- Data contoh di produksi. Josep akan minta tolong rekan setim, sekitar 30 menit.
+- README diperbarui: ekstraksi CV sudah nyata, folder `api/`, migrasi 0006, dan koreksi
+  bagian "Belum Ada". Dikerjakan Claude saat diminta.
+- Bagian Status Implementasi di masterplan belum diperbarui sejak 1 September.
