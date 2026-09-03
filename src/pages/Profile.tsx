@@ -12,7 +12,7 @@ import { PortfolioCard } from '../components/profile/PortfolioCard';
 import { TrackRecordStats } from '../components/profile/TrackRecordStats';
 import { useStore } from '../contexts/StoreContext';
 import * as api from '../lib/api';
-import { fullDate } from '../utils/format';
+import { fullDate, rupiah } from '../utils/format';
 
 type ProfileTab = 'portfolio' | 'track-record';
 
@@ -115,6 +115,30 @@ export function Profile() {
     ),
     [myAgreements]
   );
+
+  // Rekap pendapatan. Cuma tampil di profil sendiri, karena halaman ini bisa dibuka siapa saja
+  // lewat /u/:handle dan penghasilan orang bukan urusan publik.
+  const earnings = useMemo(() => {
+    const now = new Date();
+    const paid = myAgreements.filter(
+      (item) => item.status === 'completed' || item.status === 'completed-unconfirmed'
+    );
+
+    // Tanggal selesainya memakai aturan yang sama dengan daftar catatan pekerjaan di bawah,
+    // supaya satu pekerjaan tidak jatuh di bulan berbeda menurut dua bagian halaman yang sama.
+    const thisMonth = paid.filter((item) => {
+      const done = new Date(item.confirmation?.confirmedAt ?? item.deadline);
+      return done.getFullYear() === now.getFullYear() && done.getMonth() === now.getMonth();
+    });
+
+    const sum = (list: typeof paid) => list.reduce((total, item) => total + item.price, 0);
+    return {
+      monthTotal: sum(thisMonth),
+      monthCount: thisMonth.length,
+      allTotal: sum(paid),
+      allCount: paid.length
+    };
+  }, [myAgreements]);
 
   if (handle && userLoading) {
     return (
@@ -269,6 +293,26 @@ export function Profile() {
             <strong className="font-semibold text-ink">Bisa diandalkan atau tidak?</strong> Statistik
             apa adanya. Catatan negatif tidak disembunyikan dan tidak diringkas jadi skor.
           </p>
+
+          {isMe ?
+        <div className="mt-5 border border-line-strong bg-subtle p-4">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
+                Pendapatan bulan ini
+              </h3>
+              <p className="mt-2 text-[26px] font-bold tabular-nums tracking-tightest text-ink">
+                {rupiah(earnings.monthTotal)}
+              </p>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+                Dari {earnings.monthCount} pekerjaan selesai bulan ini. Sepanjang waktu{' '}
+                {rupiah(earnings.allTotal)} dari {earnings.allCount} pekerjaan.
+              </p>
+              <p className="mt-2.5 text-[11.5px] leading-relaxed text-faint">
+                Dihitung dari harga kesepakatan yang sudah selesai, di luar biaya admin.
+                Pembayarannya sendiri terjadi langsung antar orang, jadi angka ini catatan
+                kesepakatan, bukan bukti uang masuk. Hanya kamu yang bisa melihatnya.
+              </p>
+            </div> :
+        null}
 
           <div className="mt-5">
             <TrackRecordStats stats={user.stats} />

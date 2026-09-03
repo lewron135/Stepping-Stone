@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import type { Agreement, Job, Message, Offer, Thread, User } from '../types';
+import type { Agreement, Job, JobComment, Message, Offer, Thread, User } from '../types';
 import { useAuth } from './AuthContext';
 import * as api from '../lib/api';
 import type { ProfileInput } from '../lib/api';
@@ -32,6 +32,8 @@ interface StoreValue {
   myOfferForJob: (jobId: string) => Offer | undefined;
   threadForJob: (jobId: string, otherUserId: string) => Promise<Thread>;
   messagesForThread: (threadId: string) => Promise<Message[]>;
+  commentsForJob: (jobId: string) => Promise<JobComment[]>;
+  addComment: (jobId: string, text: string) => Promise<JobComment>;
   createJob: (input: NewJobInput) => Promise<Job>;
   submitOffer: (jobId: string, price: number, note: string) => Promise<void>;
   selectOffer: (offerId: string) => Promise<string>;
@@ -155,6 +157,11 @@ export function StoreProvider({ children }: {children: React.ReactNode;}) {
       myOfferForJob: (jobId) =>
       offers.find((offer) => offer.jobId === jobId && offer.workerId === currentUser?.id),
       messagesForThread: (threadId) => api.fetchMessagesForThread(threadId),
+
+      // Komentar tidak ikut dimuat di awal seperti jobs atau agreements, karena cuma relevan
+      // saat satu pekerjaan dibuka. Polanya sama dengan penawaran dan pesan.
+      commentsForJob: (jobId) => api.fetchCommentsForJob(jobId),
+      addComment: (jobId, text) => api.addJobComment(jobId, text),
 
       threadForJob: async (jobId, otherUserId) => {
         const thread = await api.getOrCreateThread(jobId, otherUserId);

@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import type {
-  Agreement, AppNotification, Job, Message, Offer, Thread, User, PortfolioItem, WorkType } from
+  Agreement, AppNotification, Job, JobComment, Message, Offer, Thread, User, PortfolioItem, WorkType } from
 '../types';
 import type { NewJobInput } from '../contexts/StoreContext';
 
@@ -72,6 +72,16 @@ function mapMessage(row: any): Message {
     id: row.id,
     threadId: row.thread_id,
     senderId: row.sender_id,
+    text: row.text,
+    createdAt: row.created_at
+  };
+}
+
+function mapJobComment(row: any): JobComment {
+  return {
+    id: row.id,
+    jobId: row.job_id,
+    authorId: row.author_id,
     text: row.text,
     createdAt: row.created_at
   };
@@ -242,6 +252,31 @@ export async function fetchMessagesForThread(threadId: string): Promise<Message[
     .order('created_at', { ascending: true });
   if (error) throw error;
   return (data ?? []).map(mapMessage);
+}
+
+// Sama dengan batas yang ditegakkan RPC add_job_comment di migrasi 0007. Dibatasi di dua sisi
+// supaya user melihat sisa karakternya, bukan mendapati komentarnya terpotong diam-diam.
+export const COMMENT_MAX_CHARS = 500;
+
+export async function fetchCommentsForJob(jobId: string): Promise<JobComment[]> {
+  const { data, error } = await supabase
+    .from('job_comments')
+    .select('*')
+    .eq('job_id', jobId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map(mapJobComment);
+}
+
+// Menulis lewat RPC, bukan insert langsung, karena tabelnya sengaja tidak punya policy insert.
+// Pembersihan teks dan batas panjangnya hidup di dalam fungsi database.
+export async function addJobComment(jobId: string, text: string): Promise<JobComment> {
+  const { data, error } = await supabase.rpc('add_job_comment', {
+    p_job_id: jobId,
+    p_text: text
+  });
+  if (error) throw error;
+  return mapJobComment(data);
 }
 
 async function buildUserFromProfile(profile: any): Promise<User> {

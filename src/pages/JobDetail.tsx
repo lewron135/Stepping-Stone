@@ -14,6 +14,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import { JobComments } from '../components/job/JobComments';
 import { OfferCard } from '../components/offer/OfferCard';
 import { OfferModal } from '../components/offer/OfferModal';
 import { TrackRecordStats } from '../components/profile/TrackRecordStats';
@@ -226,6 +227,8 @@ export function JobDetail() {
               </div>
             }
           </section>
+
+          <JobComments jobId={job.id} posterId={job.posterId} />
         </div>
 
         <aside className="lg:pt-1">

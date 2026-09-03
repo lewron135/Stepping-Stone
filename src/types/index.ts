@@ -104,6 +104,14 @@ export interface Agreement {
   unpaidReported?: boolean;
 }
 
+export interface JobComment {
+  id: string;
+  jobId: string;
+  authorId: string;
+  text: string;
+  createdAt: string;
+}
+
 export interface Message {
   id: string;
   threadId: string;

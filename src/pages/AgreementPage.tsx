@@ -15,6 +15,7 @@ import { Avatar } from '../components/ui/Avatar';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Rating } from '../components/ui/Rating';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -26,6 +27,22 @@ import { useStore } from '../contexts/StoreContext';
 import { useUser } from '../hooks/useUser';
 import { useToast } from '../contexts/ToastContext';
 import { fullDate, deadlineLabel, rupiah, timeAgo } from '../utils/format';
+
+// Orang menulis nomor Indonesia dengan tiga cara: 08xx, +628xx, dan 628xx. Ketiganya
+// dinormalkan ke bentuk internasional supaya tautan wa.me yang ikut terkirim selalu benar.
+function normalizeWhatsApp(raw: string): {intl: string;display: string;} | null {
+  let intl = raw.replace(/\D/g, '');
+  if (intl.startsWith('0')) {
+    intl = `62${intl.slice(1)}`;
+  } else if (intl.startsWith('8')) {
+    intl = `62${intl}`;
+  }
+  if (!intl.startsWith('62')) return null;
+
+  const local = intl.slice(2);
+  if (local.length < 8 || local.length > 13) return null;
+  return { intl, display: `+${intl}` };
+}
 
 export function AgreementPage() {
   const { agreementId = '' } = useParams();
@@ -39,6 +56,7 @@ export function AgreementPage() {
     cancelAgreement,
     reportUnpaid,
     threadForJob,
+    sendMessage,
     ensureAgreement
   } = useStore();
 
@@ -65,6 +83,9 @@ export function AgreementPage() {
   const [completionOpen, setCompletionOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [waOpen, setWaOpen] = useState(false);
+  const [waNumber, setWaNumber] = useState('');
+  const [waSending, setWaSending] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const client = useUser(agreement?.clientId);
   const worker = useUser(agreement?.workerId);
@@ -132,6 +153,35 @@ export function AgreementPage() {
       navigate(`/chat/${thread.id}`);
     } catch (error) {
       toast('Gagal membuka chat', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    }
+  };
+
+  const shareWhatsApp = async () => {
+    if (!job || waSending) return;
+
+    const parsed = normalizeWhatsApp(waNumber);
+    if (!parsed) {
+      toast('Nomor belum benar', 'Tulis nomor WhatsApp Indonesia, misalnya 081234567890.');
+      return;
+    }
+
+    setWaSending(true);
+    try {
+      const other = isClient ? agreement.workerId : agreement.clientId;
+      const thread = await threadForJob(job.id, other);
+      await sendMessage(
+        thread.id,
+        `Nomor WhatsApp aku ${parsed.display}, boleh dihubungi di luar aplikasi kalau perlu. ` +
+        `https://wa.me/${parsed.intl}`
+      );
+      setWaOpen(false);
+      setWaNumber('');
+      toast('Nomor terkirim', 'Nomormu masuk ke chat pekerjaan ini.');
+      navigate(`/chat/${thread.id}`);
+    } catch (error) {
+      toast('Gagal mengirim nomor', 'Terjadi kesalahan, coba lagi sebentar lagi.');
+    } finally {
+      setWaSending(false);
     }
   };
 
@@ -386,9 +436,7 @@ export function AgreementPage() {
                 variant="tertiary"
                 fullWidth
                 icon={<PhoneIcon className="h-3.5 w-3.5" aria-hidden />}
-                onClick={() =>
-                toast('Nomor WhatsApp dibagikan', 'Chat aplikasi tetap jadi jalur utama kerja.')
-                }>
+                onClick={() => setWaOpen(true)}>
 
                     Bagikan WhatsApp (opsional)
                   </Button> :
@@ -498,6 +546,37 @@ export function AgreementPage() {
           Gunakan hanya jika pekerjaan sudah selesai tetapi pembayaran tidak diterima. Laporan tidak
           dinilai otomatis oleh sistem, tetapi tercatat sebagai fakta pada track record klien.
         </p>
+      </Modal>
+
+      <Modal
+        open={waOpen}
+        onClose={() => setWaOpen(false)}
+        title="Bagikan nomor WhatsApp"
+        description="Nomormu dikirim sebagai pesan di chat pekerjaan ini, bukan disimpan di profil."
+        footer={
+        <>
+            <Button variant="tertiary" onClick={() => setWaOpen(false)}>
+              Batal
+            </Button>
+            <Button loading={waSending} onClick={shareWhatsApp}>
+              Kirim nomor
+            </Button>
+          </>
+        }>
+        
+        <div className="flex flex-col gap-3">
+          <Input
+            id="wa-number"
+            inputMode="tel"
+            value={waNumber}
+            placeholder="081234567890"
+            onChange={(event) => setWaNumber(event.target.value)} />
+          
+          <p className="text-[12.5px] leading-relaxed text-muted">
+            Chat aplikasi tetap jadi jalur utama kerja, karena isinya jadi catatan kalau nanti ada
+            yang perlu ditengok ulang. WhatsApp cuma jalur tambahan setelah kesepakatan terkunci.
+          </p>
+        </div>
       </Modal>
     </div>);
 
