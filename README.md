@@ -22,6 +22,7 @@
 - [Teknologi](#teknologi)
 - [Arsitektur Sistem](#arsitektur-sistem)
 - [Skema Database](#skema-database)
+- [Cara Kerja AI](#cara-kerja-ai)
 - [Instalasi dan Setup](#instalasi-dan-setup)
 - [Penggunaan](#penggunaan)
 - [Keputusan Teknis](#keputusan-teknis)
@@ -128,7 +129,7 @@ flowchart TB
     F --> H["Trigger PostgreSQL<br/>notifikasi, auto-lock, pagar batas waktu"]
     H --> I["Tabel notifications"]
     E --> I
-    A --> J["Vercel Functions (api/)<br/>ekstraksi CV, Brief & Search Assistant"]
+    A --> J["Vercel Functions (api/)<br/>ekstraksi CV, Brief dan Search Assistant"]
     J --> K["Anthropic Claude Haiku 4.5"]
     J --> L["Supabase Auth<br/>verifikasi sesi pemanggil"]
 ```
@@ -174,11 +175,35 @@ erDiagram
 
 ### Status Kesepakatan
 
+```mermaid
+stateDiagram-v2
+    state "waiting-approval" as WA
+    state "locked" as LO
+    state "in-progress" as IP
+    state "waiting-confirmation" as WC
+    state "completed" as CO
+    state "completed-unconfirmed" as CU
+    state "cancelled" as CA
+
+    [*] --> WA: klien memilih satu penawaran
+    WA --> LO: pekerja menekan Setuju
+    LO --> IP: pekerjaan dimulai
+    IP --> WC: bukti kerja diunggah
+    WC --> CO: klien konfirmasi, beri rating dan testimoni
+    WC --> CU: lewat 2 hari tanpa respons klien
+
+    WA --> CA
+    LO --> CA
+    IP --> CA
+
+    CO --> [*]
+    CU --> [*]
+    CA --> [*]
 ```
-waiting-approval -> locked -> in-progress -> waiting-confirmation -> completed
-                                                                  -> completed-unconfirmed
-     (kapan saja sebelum selesai) -> cancelled
-```
+
+Begitu masuk `locked`, harga dan tenggat tidak bisa diubah lagi oleh siapa pun, termasuk lewat
+panggilan langsung ke database. Jalur ke `completed-unconfirmed` memastikan pekerjaan tetap masuk
+rekam jejak pekerja walaupun kliennya menghilang, hanya saja tanpa rating dan testimoni.
 
 ### Fungsi RPC
 
@@ -198,6 +223,53 @@ Folder `supabase/migrations/` berisi perubahan skema yang bisa dijalankan ulang 
 | `0004_completion_timeout_guard.sql` | Pagar sisi server untuk batas 2 hari konfirmasi |
 | `0005_storage_bukti_kerja.sql` | Bucket `bukti-kerja` beserta policy penyimpanan |
 | `0006_update_profile.sql` | Fungsi `update_profile` untuk menyimpan detail profil dan skill |
+
+---
+
+## Cara Kerja AI
+
+Ada tiga tempat AI dipakai, dan ketiganya memegang aturan yang sama: **AI tidak pernah
+memutuskan apa pun, dia hanya menyiapkan draf, dan manusia selalu jadi penentu akhir.**
+
+| Fitur | Yang dikerjakan AI | Yang tetap dikerjakan manusia atau kode |
+|-------|--------------------|------------------------------------------|
+| **Isi Profil dari CV** | Membaca PDF di server dan menarik daftar skill | Pengguna meninjau, membetulkan, lalu menekan Simpan. Berkasnya tidak pernah disimpan |
+| **Brief Assistant** | Menyusun draf ruang lingkup, hasil akhir, dan tenggat dari satu kalimat | Hanya kolom kosong yang diisi, ditandai draf, dan pengguna bebas menimpanya sebelum diposting |
+| **Search Assistant** | Menerjemahkan kalimat bebas jadi filter terstruktur | Penyaringan daftar pekerjaan tetap dijalankan kode filter biasa. Model tidak pernah menyortir atau memilihkan pekerjaan |
+
+### Tiga lapis penjaga
+
+Semuanya ditegakkan di sisi server, dan yang menolak adalah kode, bukan model. Penolakan yang
+dijalankan kode jauh lebih sulit dijebol daripada penolakan yang hanya dititipkan lewat prompt.
+
+```mermaid
+flowchart TD
+    A["Kalimat dari pengguna"] --> B{"Punya sesi Supabase yang sah?"}
+    B -- tidak --> X1["401 ditolak"]
+    B -- ya --> C{"Masih di bawah 10 panggilan per 10 menit?"}
+    C -- tidak --> X2["429 ditolak"]
+    C -- ya --> D["Lapis 1: system prompt mengurung peran ke urusan pekerjaan kampus"]
+    D --> E["Claude Haiku 4.5, keluaran terstruktur lewat tool use yang dipaksa"]
+    E --> F{"Lapis 2: kode membaca kolom intent"}
+    F -- di luar topik atau tidak pantas --> X3["422 ditolak"]
+    F -- sesuai --> G["Nilai dicocokkan ulang ke daftar kategori dan area yang benar-benar ada"]
+    G --> H["Draf ditampilkan sebagai usulan, pengguna yang memutuskan"]
+```
+
+Lapis ketiga adalah dua pemeriksaan paling awal di diagram: endpoint berbayar hanya melayani
+pengguna yang sudah masuk, dengan batas pemakaian per orang per waktu, dan panjang pertanyaan
+dipotong di 500 karakter. Tanpa itu, satu endpoint publik bisa menghabiskan kredit tim dalam
+hitungan menit.
+
+### Kenapa proxy, bukan panggilan langsung dari browser
+
+`ANTHROPIC_API_KEY` disimpan sebagai environment variable di sisi server dan dibaca hanya oleh
+serverless function di folder `api/`. Kalau key itu ada di kode frontend, siapa pun bisa
+membacanya lewat DevTools. Karena itu namanya sengaja **tanpa** awalan `VITE_`: Vite menanamkan
+setiap variabel berawalan itu ke dalam bundel JavaScript yang dikirim ke browser.
+
+Model yang dipakai Claude Haiku 4.5, sekitar $0,001 per panggilan. Aplikasinya tetap berjalan
+penuh tanpa API key, hanya ketiga fitur di atas yang mati dan mengatakannya apa adanya.
 
 ---
 
@@ -282,6 +354,27 @@ python3 scripts/dev_api_server.py   # menjalankan folder api/ di localhost:8787
 Perintah terakhir dibutuhkan hanya kalau kamu ingin menguji ekstraksi CV atau kedua asisten AI di laptop. Server itu menjalankan handler yang sama persis dengan yang nanti dijalankan Vercel, jadi tidak ada logika yang ditulis dua kali. Setelah jalan, isi `VITE_CV_EXTRACT_URL` dan `VITE_AI_BASE_URL` di `.env` seperti dicontohkan di file `.env.example`.
 
 ### Alur Pengguna
+
+```mermaid
+sequenceDiagram
+    actor K as Klien
+    participant DB as Supabase
+    actor P as Pekerja
+
+    K->>DB: create_job, brief wajib diisi
+    DB-->>P: pekerjaan muncul di feed
+    P->>DB: submit_offer, harga dan catatan
+    DB-->>K: notifikasi penawaran masuk
+    K->>DB: select_offer
+    Note over DB: trigger menandai klien otomatis setuju
+    DB-->>P: notifikasi penawaranmu dipilih
+    P->>DB: agree_to_agreement
+    Note over DB: kedua pihak setuju, harga dan tenggat terkunci
+    P->>DB: submit_proof, foto bukti kerja
+    DB-->>K: notifikasi bukti dikirim
+    K->>DB: confirm_completion, rating dan testimoni
+    DB-->>P: portofolio dan rekam jejak bertambah
+```
 
 1. **Daftar atau masuk.** Autentikasi memakai email dan password lewat Supabase Auth.
 2. **Jelajahi pekerjaan.** Dari Feed, pilih tab Kerja Cepat atau Proyek, lalu buka detail pekerjaan.

@@ -11,6 +11,7 @@ import { useStore } from '../../contexts/StoreContext';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { useToast } from '../../contexts/ToastContext';
 import { cn } from '../../utils/cn';
+import { errorText } from '../../utils/errors';
 
 const BIO_MAX = 300;
 const SKILL_MAX = 30;
@@ -90,7 +91,7 @@ export function ProfileForm({ email }: {email: string;}) {
       }
       toast('CV terbaca', 'Periksa dulu isinya, lalu tekan Simpan.');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Coba lagi sebentar lagi.';
+      const message = errorText(error, 'Coba lagi sebentar lagi.');
       toast('CV gagal dibaca', message);
     } finally {
       setReading(false);
@@ -156,7 +157,7 @@ export function ProfileForm({ email }: {email: string;}) {
       setSkillDraft('');
       toast('Profil disimpan', 'Perubahan langsung terlihat di profil publik kamu.');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Coba lagi sebentar lagi.';
+      const message = errorText(error, 'Coba lagi sebentar lagi.');
       toast('Profil gagal disimpan', message);
     } finally {
       setSaving(false);
@@ -176,7 +177,7 @@ export function ProfileForm({ email }: {email: string;}) {
       // ditekan, sama seperti perlakuan hasil pembacaan CV di atas.
       setAvatarUrl(await uploadAvatarImage(file));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Coba lagi sebentar lagi.';
+      const message = errorText(error, 'Coba lagi sebentar lagi.');
       toast('Foto gagal diunggah', message);
     } finally {
       setUploadingAvatar(false);
