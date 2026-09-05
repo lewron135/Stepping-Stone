@@ -18,13 +18,17 @@
 ## Daftar Isi
 
 - [Tentang Proyek](#tentang-proyek)
+- [Kesesuaian Tema dan SDG](#kesesuaian-tema-dan-sdg)
 - [Fitur Unggulan](#fitur-unggulan)
+- [Demo dan Screenshot](#demo-dan-screenshot)
 - [Teknologi](#teknologi)
 - [Arsitektur Sistem](#arsitektur-sistem)
 - [Skema Database](#skema-database)
 - [Cara Kerja AI](#cara-kerja-ai)
 - [Instalasi dan Setup](#instalasi-dan-setup)
 - [Penggunaan](#penggunaan)
+- [API Documentation](#api-documentation)
+- [Testing](#testing)
 - [Keputusan Teknis](#keputusan-teknis)
 - [Status Pengembangan](#status-pengembangan)
 - [Tim Pengembang](#tim-pengembang)
@@ -36,17 +40,116 @@
 
 ### Latar Belakang
 
-Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance yang ada terlalu besar dan kompetitif untuk kebutuhan sekecil "titip beli" atau "desain poster acara kampus". Di sisi lain, kerjaan informal antar teman kampus rawan masalah klasik: harga berubah di tengah jalan, tenggat molor tanpa kejelasan, sampai hasil kerja yang sudah selesai tidak dibayar, dan semuanya tidak meninggalkan bukti apa pun untuk portofolio.
+Di kolom komentar hampir setiap lowongan magang, satu kalimat muncul berulang-ulang:
+
+> *"Cari pengalaman kok syaratnya harus sudah punya pengalaman."*
+
+Itu lingkaran yang menutup sendiri. Untuk diterima kerja kamu butuh bukti pengalaman; untuk
+punya bukti pengalaman kamu harus diterima kerja lebih dulu. Mahasiswa yang belum pernah masuk
+ke lingkaran itu tidak punya pintu masuk sama sekali.
+
+Padahal pekerjaannya **sudah ada**, tepat di sekitar mereka. Setiap minggu ada yang butuh poster
+acara himpunan, butuh dibantu olah data kuesioner, butuh video after movie diedit, butuh dititipi
+beli makan siang. Semuanya dikerjakan mahasiswa, untuk mahasiswa, dan dibayar.
+
+Masalahnya semua itu menguap begitu selesai. Kesepakatannya lewat chat pribadi, pembayarannya
+lewat transfer, lalu tidak ada satu pun jejak yang bisa ditunjukkan ke pemberi kerja berikutnya.
+Kerja informal antar teman kampus juga rawan masalah klasik: harga berubah di tengah jalan,
+tenggat molor tanpa kejelasan, dan hasil kerja yang sudah diserahkan tidak dibayar.
+
+Jadi ada dua kerugian sekaligus. Yang bekerja tidak terlindungi, **dan** bahkan ketika semuanya
+berjalan lancar, tidak ada apa pun yang tertinggal.
 
 ### Solusi yang Ditawarkan
 
-**Stepping Stone** adalah forum kerja antar mahasiswa dengan alur yang jelas dari awal sampai akhir: temukan pekerjaan, ajukan penawaran dan nego lewat chat, kunci kesepakatan (harga dan tenggat tidak bisa berubah lagi), kerjakan dan unggah bukti, lalu dapat testimoni yang otomatis masuk ke portofolio. Setiap transaksi menghasilkan dua hal sekaligus: uang dan bukti pengalaman yang bisa ditunjukkan.
+**Stepping Stone memotong lingkaran itu dengan satu prinsip: setiap pekerjaan kecil harus
+meninggalkan bukti.**
+
+Alurnya satu garis lurus, dan tidak ada langkah yang bisa dilewati:
+
+```
+temukan kerjaan  ->  ajukan penawaran & nego  ->  KESEPAKATAN TERKUNCI
+                                                          |
+                        portofolio  <-  testimoni  <-  kerjakan & unggah bukti
+```
+
+Begitu kedua pihak setuju, harga dan tenggat **dikunci di level database** dan tidak bisa diubah
+sepihak oleh siapa pun, termasuk lewat panggilan langsung ke database. Setelah pekerjaan selesai,
+bukti kerja dan testimoni klien otomatis jadi entri portofolio di profil publik pekerja.
+
+Sekali transaksi, dua hasil: **uang, dan bukti pengalaman yang bisa ditunjukkan.**
+
+| Masalah | Yang dilakukan Stepping Stone |
+|---------|-------------------------------|
+| Harga berubah di tengah jalan | Harga dan tenggat terkunci di level tabel begitu kedua pihak setuju |
+| Kerja selesai tapi tidak dibayar | Laporan Belum Dibayar, tercatat permanen di rekam jejak klien |
+| Klien menghilang saat konfirmasi | Batas 2 hari, pekerjaan tetap masuk rekam jejak pekerja |
+| Selesai kerja tanpa jejak apa pun | Bukti dan testimoni otomatis jadi entri portofolio |
+| Tidak tahu harus ambil kerjaan apa | Career Compass menyarankan proyek sedikit di atas level sekarang |
 
 ### Tujuan Proyek
 
-- **Tujuan utama**: Mempertemukan mahasiswa yang butuh pekerjaan cepat atau proyek dengan mahasiswa lain yang punya skill terkait, lewat kesepakatan yang jelas dan terlindungi bagi kedua pihak.
+- **Tujuan utama**: Memberi mahasiswa pintu masuk pertama ke pengalaman kerja yang bisa dibuktikan, lewat pekerjaan nyata di sekitar kampus dengan kesepakatan yang melindungi kedua pihak.
 - **Target pengguna**: Mahasiswa dalam lingkup kampus yang sama, baik sebagai pemberi kerja (klien) yang memasang pekerjaan, maupun pekerja yang mengajukan penawaran.
 - **Value proposition**: Kesepakatan yang terkunci, bukti kerja dan testimoni yang otomatis membangun portofolio, serta Career Compass yang menyarankan proyek sedikit di atas level skill pengguna supaya portofolio naik bertahap.
+
+---
+
+## Kesesuaian Tema dan SDG
+
+| | |
+|---|---|
+| **Tema** | *Adaptive Innovation for a Future-Ready Digital Society* |
+| **Subtema** | *Smart Sustainable Digital Solution for Inclusive Society* |
+| **SDG utama** | **SDG 8** - Pekerjaan Layak dan Pertumbuhan Ekonomi |
+| **SDG pendukung** | **SDG 9** - Industri, Inovasi, dan Infrastruktur |
+
+### SDG 8 - Pekerjaan Layak dan Pertumbuhan Ekonomi
+
+Guidebook merumuskan SDG 8 sebagai *"pemberdayaan ekonomi digital, UMKM, dan peluang kerja
+berbasis teknologi"*. Stepping Stone menggarap itu di skala yang paling dekat dengan mahasiswa:
+ekonomi kecil yang sudah berputar di dalam kampus, tapi selama ini berjalan tanpa perlindungan
+dan tanpa rekam jejak.
+
+Kata kuncinya **"layak"**. Yang membedakan pekerjaan layak dari sekadar pekerjaan adalah adanya
+perlindungan, kepastian, dan pengakuan. Ketiganya tidak kami tulis sebagai janji di halaman
+depan, melainkan ditegakkan sebagai aturan di dalam database:
+
+| Unsur pekerjaan layak | Wujudnya di sistem |
+|---|---|
+| Kesepakatan tidak bisa diubah sepihak | Harga dan tenggat terkunci oleh trigger PostgreSQL, berlaku untuk semua pemanggil |
+| Perlindungan atas upah | Laporan Belum Dibayar tercatat permanen di rekam jejak publik klien |
+| Kepastian saat pihak lain menghilang | Batas 2 hari konfirmasi, divalidasi ulang di sisi server |
+| Pengakuan atas kerja yang selesai | Bukti kerja dan testimoni otomatis jadi portofolio publik |
+| Mobilitas ke atas | Career Compass menyarankan proyek sedikit di atas level yang sudah dibuktikan |
+
+Baris terakhir itu jawaban langsung atas paradoks di Latar Belakang. Portofolio yang terbentuk
+sendiri dari pekerjaan nyata adalah cara paling murah bagi mahasiswa untuk keluar dari lingkaran
+"butuh pengalaman untuk dapat pengalaman".
+
+### SDG 9 - Industri, Inovasi, dan Infrastruktur
+
+Guidebook menyebut *"pengembangan sistem digital modern, smart technology, dan inovasi berbasis
+web"*. Kontribusinya ada pada cara sistem ini dibangun, bukan sekadar pada fiturnya:
+
+- **Aturan main hidup di infrastruktur, bukan di tampilan.** Seluruh operasi tulis lewat 13 fungsi
+  RPC PostgreSQL, dijaga Row Level Security dan 5 trigger. Aturan tetap berlaku apa pun jalur
+  pemanggilnya, termasuk dari console browser.
+- **AI dipakai untuk menurunkan hambatan masuk, bukan untuk menggantikan penilaian orang.**
+  Ketiga fitur AI hanya menyiapkan draf; keputusan akhir selalu di tangan manusia.
+
+### Inklusif dan berkelanjutan
+
+**Inklusif.** Hambatan masuknya sengaja serendah mungkin. Ada dua jenis pekerjaan, dan yang
+termurah dimulai dari Rp20.000 tanpa menuntut keahlian khusus, sehingga mahasiswa tahun pertama
+yang portofolionya masih kosong tetap punya pintu masuk. Brief Assistant membantu yang belum
+terbiasa menulis brief, ekstraksi CV membantu yang belum terbiasa menyusun profil, dan seluruh
+antarmuka memakai bahasa Indonesia sehari-hari. Mode terang dan gelap dirancang setara.
+
+**Berkelanjutan.** Nilai yang dihasilkan menumpuk, tidak habis sekali pakai. Satu pekerjaan
+selesai menambah satu entri portofolio permanen, yang menaikkan peluang mendapat pekerjaan
+berikutnya yang lebih besar. Reputasi kedua belah pihak ikut tercatat, sehingga forum ini
+membersihkan dirinya sendiri seiring waktu.
 
 ---
 
@@ -71,37 +174,38 @@ Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance
 - **Search Assistant** menerjemahkan kalimat bebas di feed jadi filter terstruktur, yang lalu dijalankan logika filter biasa. Kalau asisten gagal, pencarian kata tetap berfungsi.
 - **Mode Terang dan Gelap** yang didesain setara, bisa diganti kapan saja.
 
-<!-- ==========================================================================================
-     TAMPILAN. Blok di bawah sengaja masih dikomentari.
+---
 
-     Taruh kelima berkas PNG di docs/img/ (panduan pengambilannya ada di docs/img/README.md),
-     lalu hapus baris pembuka komentar ini dan baris penutupnya di bawah. Dibiarkan dikomentari
-     supaya README tidak pernah menampilkan ikon gambar rusak kalau berkasnya belum sempat
-     diambil; gambar rusak terlihat lebih buruk daripada tidak ada gambar sama sekali.
+## Demo dan Screenshot
 
-     Jangan lupa tambahkan juga barisnya ke Daftar Isi di atas:
-     - [Tampilan](#tampilan)
-========================================================================================== -->
+### Live Demo
 
-<!--
-### Tampilan
+**[stepping-stone-eight.vercel.app](https://stepping-stone-eight.vercel.app)**
 
-| Feed | Detail Pekerjaan |
-|:---:|:---:|
-| ![Feed pekerjaan dengan filter dan asisten pencarian](docs/img/feed.png) | ![Detail pekerjaan dengan brief, penawaran, dan tanya jawab](docs/img/detail.png) |
-| Dua tab pekerjaan, filter kategori dan area, plus kotak asisten pencarian di panel kanan. | Brief lengkap, daftar penawaran yang masuk, dan tanya jawab terbuka sebelum menawar. |
+Bisa dijelajahi tanpa membuat akun: feed, detail pekerjaan, tanya jawab, dan profil publik
+terbuka untuk pengunjung. Membuat akun dibutuhkan untuk menawar, memasang pekerjaan, dan
+membuka halaman kesepakatan.
 
-| Kesepakatan | Profil dan Portofolio |
-|:---:|:---:|
-| ![Halaman kesepakatan dengan status terkunci dan linimasa](docs/img/kesepakatan.png) | ![Profil dengan portofolio, rekam jejak, dan rekap pendapatan](docs/img/profil.png) |
-| Status terkunci, rincian harga beserta biaya admin, dan linimasa tiap tahap kesepakatan. | Portofolio yang terbentuk sendiri dari bukti kerja, rekam jejak, dan rekap pendapatan. |
+### Screenshot Aplikasi
 
 <div align="center">
-  <img src="docs/img/brief-assistant.png" alt="Brief Assistant mengisi tiga kolom brief dari satu kalimat" width="720" />
-  <br />
-  <em>Brief Assistant: satu kalimat jadi draf ruang lingkup, hasil akhir, dan tenggat. Semuanya masih bisa diedit sebelum diposting.</em>
+
+  <img src="docs/img/hero.jpg" alt="Halaman depan" width="800"/>
+  <p><em>Halaman depan - "Kerja kecil. Bukti yang besar."</em></p>
+
+  <img src="docs/img/feed.png" alt="Homepage" width="800"/>
+  <p><em>Homepage - feed dua jenis pekerjaan, filter kategori dan area, serta Asisten Pencarian berbasis AI di panel kanan</em></p>
+
+  <img src="docs/img/portofolio.png" alt="Dashboard" width="800"/>
+  <p><em>Portofolio - entri terbentuk sendiri dari bukti kerja dan testimoni klien setelah kesepakatan selesai</em></p>
+
+  <img src="docs/img/brief-assistant.png" alt="Brief Assistant" width="800"/>
+  <p><em>Brief Assistant - satu kalimat niat jadi draf ruang lingkup, hasil akhir, dan tenggat, lengkap dengan pratinjau tampilan di feed</em></p>
+
+  <img src="docs/img/profil-cv.png" alt="Isi profil dari CV" width="800"/>
+  <p><em>Isi Profil dari CV - berkas dibaca sekali di server lalu dibuang, yang tersimpan hanya isian yang disetujui pengguna</em></p>
+
 </div>
--->
 
 ---
 
@@ -431,6 +535,142 @@ Jika klien tidak merespons dalam 2 hari sejak bukti dikirim, kesepakatan berubah
 
 ---
 
+## API Documentation
+
+Stepping Stone tidak punya server aplikasi sendiri. Ada dua permukaan API: **Supabase**
+(PostgREST untuk baca, RPC untuk tulis) dan **tiga serverless function Python** di folder `api/`
+yang hanya menangani hal-hal yang tidak bisa dikerjakan di browser.
+
+### Base URL
+
+```
+Supabase   : https://<project-ref>.supabase.co
+Serverless : https://stepping-stone-eight.vercel.app/api   (produksi)
+             http://localhost:8787/api                     (lokal, lihat scripts/dev_api_server.py)
+```
+
+### Serverless Functions
+
+Ketiganya menerima `POST` dan menolak pemanggil tanpa sesi Supabase yang sah (`401`), dengan
+batas 10 panggilan per 10 menit per pengguna (`429`).
+
+| Endpoint | Guna | Body | Balasan |
+|---|---|---|---|
+| `POST /api/extract-cv` | Membaca PDF CV, menarik skill dan detail pendidikan | PDF mentah (`Content-Type: application/pdf`, maks 4 MB) | `{ skills[], campus, faculty, major, year }` |
+| `POST /api/draft-brief` | Menyusun draf brief pekerjaan dari satu kalimat | `{ "text": string }` | `{ type, category, title, scope, deliverable, deadline }` |
+| `POST /api/parse-search` | Menerjemahkan kalimat pencarian jadi filter feed | `{ "text": string, "areas": string[] }` | `{ tab, kategori, area, hargaMaks }` |
+
+**Contoh permintaan**
+
+```javascript
+const { data } = await supabase.auth.getSession();
+
+const response = await fetch('/api/draft-brief', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${data.session.access_token}`
+  },
+  body: JSON.stringify({ text: 'butuh desain poster seminar kampus minggu depan' })
+});
+```
+
+```json
+{
+  "type": "proyek",
+  "category": "Desain Grafis",
+  "title": "Desain Poster Seminar Kampus",
+  "scope": "Desain poster untuk seminar kampus dengan ukuran dan konten sesuai kebutuhan...",
+  "deliverable": "1 poster A3 siap cetak (PDF) dan 1 versi feed Instagram (PNG)",
+  "deadline": "2026-09-13T17:00"
+}
+```
+
+**Kode status**
+
+| Kode | Arti |
+|---|---|
+| `200` | Berhasil |
+| `400` | Body bukan JSON yang sah, atau teks permintaan kosong |
+| `401` | Tidak ada sesi, atau sesinya sudah kedaluwarsa |
+| `413` | Body melebihi batas (16 KB untuk JSON, 4 MB untuk PDF) |
+| `415` | Berkas yang dikirim bukan PDF |
+| `422` | Ditolak lapis penjaga kedua: permintaan di luar topik atau tidak pantas |
+| `429` | Melewati batas pemakaian |
+| `502` / `503` | Layanan model sedang tidak bisa dihubungi, atau belum dikonfigurasi |
+
+### Fungsi RPC Supabase
+
+Seluruh operasi tulis ke tabel domain lewat fungsi berikut, dipanggil dengan
+`supabase.rpc(nama, params)`. Tidak ada `INSERT` atau `UPDATE` langsung dari frontend.
+
+| Fungsi | Parameter | Guna |
+|---|---|---|
+| `create_job` | `p_type, p_category, p_title, p_scope, p_deliverable, p_deadline, p_price, p_slots_total, p_area` | Memasang pekerjaan |
+| `submit_offer` | `p_job_id, p_price, p_note` | Mengajukan penawaran |
+| `select_offer` | `p_offer_id` | Klien memilih satu penawaran, kesepakatan terbentuk |
+| `agree_to_agreement` | `p_agreement_id` | Pekerja menyetujui, kesepakatan terkunci |
+| `submit_proof` | `p_agreement_id, p_note, p_image_url` | Mengunggah bukti kerja |
+| `confirm_completion` | `p_agreement_id, p_rating, p_testimonial` | Klien mengonfirmasi, portofolio terbentuk |
+| `close_without_confirmation` | `p_agreement_id` | Penutupan setelah batas 2 hari |
+| `cancel_agreement` | `p_agreement_id` | Membatalkan kesepakatan |
+| `report_unpaid` | `p_agreement_id` | Melaporkan pekerjaan yang tidak dibayar |
+| `get_or_create_thread` | `p_job_id, p_other_user_id` | Membuka percakapan |
+| `send_message` | `p_thread_id, p_text` | Mengirim pesan |
+| `update_profile` | `p_name, p_campus, p_faculty, p_major, p_year, p_bio, p_skills, p_avatar_url` | Menyimpan profil |
+| `add_job_comment` | `p_job_id, p_text` | Menulis komentar di postingan |
+
+### Pembacaan Data
+
+Baca dilakukan langsung ke PostgREST, dibatasi Row Level Security. Dua view dihitung otomatis
+dari tabel, tidak disimpan sebagai kolom.
+
+```http
+GET /rest/v1/jobs?status=eq.open&select=*
+GET /rest/v1/user_stats?user_id=eq.<uuid>          # selesai, dibatalkan, laporan belum dibayar
+GET /rest/v1/user_portfolio?user_id=eq.<uuid>      # entri portofolio beserta testimoni
+```
+
+---
+
+## Testing
+
+### Yang sudah dijalankan
+
+Pemeriksaan otomatis di bawah ini bersih pada commit terakhir:
+
+```bash
+npx tsc --noEmit                              # 0 error
+npm run lint                                  # 0 error
+npm run build                                 # sukses
+python3 -m py_compile api/*.py                # bersih
+```
+
+Ketiga serverless function diuji lewat `scripts/dev_api_server.py`, yang menjalankan handler yang
+sama persis dengan yang dijalankan Vercel:
+
+| Kasus uji | Harapan | Hasil |
+|---|---|---|
+| `POST /api/extract-cv` tanpa header Authorization | `401` | lolos |
+| `POST /api/extract-cv` dengan token tidak sah | `401`, bukan `500` | lolos |
+| Preflight `OPTIONS` mengizinkan header `Authorization` | ada di `Access-Control-Allow-Headers` | lolos |
+| `POST /api/draft-brief` dan `/api/parse-search` tanpa sesi | `401` | lolos |
+| Pembatasan RLS: pengguna lain mengubah pekerjaan bukan miliknya | ditolak | lolos |
+
+Alur kesepakatan diuji ujung ke ujung dengan dua akun terpisah, menempuh seluruh transisi status
+`waiting-approval` -> `locked` -> `waiting-confirmation` -> `completed`, termasuk jalur
+`cancelled` dan penutupan setelah batas 2 hari.
+
+### Yang belum ada
+
+**Belum ada automated test** dalam bentuk unit, integration, maupun end to end. Pengujian sejauh
+ini dilakukan manual dengan beberapa akun, ditambah pemeriksaan tipe, lint, dan build di atas.
+Ini keterbatasan yang kami sadari dan catat apa adanya, bukan sesuatu yang tersamarkan. Kalau
+proyek ini dilanjutkan, urutan pertama yang akan ditulis adalah test untuk `utils/compass.ts` dan
+`api/_extractor.py`, karena keduanya logika murni tanpa efek samping sehingga paling murah diuji.
+
+---
+
 ## Keputusan Teknis
 
 | Keputusan | Alasan |
@@ -454,12 +694,12 @@ Jika klien tidak merespons dalam 2 hari sejak bukti dikirim, kesepakatan berubah
 - Form edit profil beserta pengisian skill dari CV.
 - Brief Assistant dan Search Assistant, keduanya di atas proxy di folder `api/`.
 - Sudah ter-deploy dan bisa diakses publik.
-- Pemeriksaan tipe dan lint bersih tanpa error.
+- Pemeriksaan tipe, lint, dan build bersih tanpa error. Rinciannya di bagian [Testing](#testing).
 
 ### Belum Ada
 
-- **Test suite.** Belum ada unit, integration, maupun end to end test. Pengujian sejauh ini dilakukan manual dengan dua akun.
-- **Definisi SQL untuk skema awal dan 11 fungsi RPC.** Lihat catatan di bagian Instalasi.
+- **Automated test.** Belum ada unit, integration, maupun end to end test. Yang sudah dan belum diuji dijabarkan di bagian [Testing](#testing).
+- **Definisi SQL untuk skema tabel awal dan 11 fungsi RPC pertama.** Dua fungsi terbaru (`update_profile`, `add_job_comment`) sudah ada di `supabase/migrations/`, sisanya belum. Lihat catatan di bagian Instalasi.
 - **Batas pemakaian AI yang persisten.** Batas 10 panggilan per 10 menit per pengguna disimpan di memori instance, jadi ikut hilang saat instance didaur ulang. Cukup untuk menahan pemakaian berlebihan yang wajar, belum cukup untuk menahan penyalahgunaan yang disengaja.
 - **Asisten pencarian di layar kecil.** Kotaknya baru muncul di panel filter versi desktop.
 
@@ -467,11 +707,11 @@ Jika klien tidak merespons dalam 2 hari sejak bukti dikirim, kesepakatan berubah
 
 ## Tim Pengembang
 
-| Nama | GitHub |
-|------|--------|
-| **Josep Natanael Pasaribu** | [@lewron135](https://github.com/lewron135) |
-| **Marcellino Varian Saputra** | [@marcellinovs](https://github.com/marcellinovs) |
-| **Stanley Lin** | [@Linneisa](https://github.com/Linneisa) |
+| Nama | Peran | GitHub |
+|------|-------|--------|
+| **Josep Natanael Pasaribu** | Project Lead & Full Stack Developer | [@lewron135](https://github.com/lewron135) |
+| **Marcellino Varian Saputra** | Frontend Developer | [@marcellinovs](https://github.com/marcellinovs) |
+| **Stanley Lin** | Frontend Developer & UI/UX | [@Linneisa](https://github.com/Linneisa) |
 
 ---
 
