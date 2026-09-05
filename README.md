@@ -186,6 +186,30 @@ Bisa dijelajahi tanpa membuat akun: feed, detail pekerjaan, tanya jawab, dan pro
 terbuka untuk pengunjung. Membuat akun dibutuhkan untuk menawar, memasang pekerjaan, dan
 membuka halaman kesepakatan.
 
+### Akun Demo untuk Juri
+
+Sebagian besar isi aplikasi ini justru ada di balik login: halaman kesepakatan, chat, notifikasi,
+rekap pendapatan, dan Career Compass. Supaya tidak perlu mendaftar, tiga akun di bawah sudah
+disiapkan lengkap dengan riwayat kerjanya masing-masing.
+
+**Password ketiganya sama: `SteppingStone!2026`**
+
+| Email | Perannya | Yang paling menarik dilihat |
+|---|---|---|
+| `rakaadiputra@example.com` | Pekerja berpengalaman, sekaligus pernah jadi klien | Portofolio 2 entri dengan bukti foto dan testimoni, rekam jejak 5,0, rekap pendapatan Rp1.550.000, dan 2 percakapan berisi nego harga |
+| `tiaramaharani@example.com` | Klien yang sedang menunggu | Ada 1 kesepakatan berstatus **Menunggu Konfirmasi**. Buka Aktivitas lalu konfirmasi sambil memberi rating dan testimoni, dan lihat entri portofolio pekerjanya terbentuk saat itu juga |
+| `citradewiana@example.com` | Pekerja yang penawarannya baru dipilih | Ada 1 kesepakatan berstatus **Menunggu Persetujuan**. Tekan Setuju, dan harga beserta tenggatnya langsung **terkunci permanen** di level database |
+
+Dua baris terakhir sengaja dibiarkan menggantung supaya mekanisme intinya bisa dicoba sendiri,
+bukan cuma dibaca. Keduanya transisi sekali jalan: begitu ditekan, statusnya berpindah dan tidak
+kembali.
+
+> **Catatan integritas.** Sepuluh profil di dalam aplikasi adalah persona fiktif beserta data
+> contoh, dibuat untuk mengisi demo. Foto profilnya wajah hasil generate AI, jadi tidak ada orang
+> nyata yang identitasnya dipakai. Alur, testimoni, dan portofolionya dibentuk lewat fungsi RPC
+> yang sama persis dengan yang dipakai pengguna sungguhan, bukan baris yang dimasukkan langsung
+> ke tabel.
+
 ### Screenshot Aplikasi
 
 <div align="center">
