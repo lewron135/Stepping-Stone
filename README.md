@@ -71,6 +71,38 @@ Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance
 - **Search Assistant** menerjemahkan kalimat bebas di feed jadi filter terstruktur, yang lalu dijalankan logika filter biasa. Kalau asisten gagal, pencarian kata tetap berfungsi.
 - **Mode Terang dan Gelap** yang didesain setara, bisa diganti kapan saja.
 
+<!-- ==========================================================================================
+     TAMPILAN. Blok di bawah sengaja masih dikomentari.
+
+     Taruh kelima berkas PNG di docs/img/ (panduan pengambilannya ada di docs/img/README.md),
+     lalu hapus baris pembuka komentar ini dan baris penutupnya di bawah. Dibiarkan dikomentari
+     supaya README tidak pernah menampilkan ikon gambar rusak kalau berkasnya belum sempat
+     diambil; gambar rusak terlihat lebih buruk daripada tidak ada gambar sama sekali.
+
+     Jangan lupa tambahkan juga barisnya ke Daftar Isi di atas:
+     - [Tampilan](#tampilan)
+========================================================================================== -->
+
+<!--
+### Tampilan
+
+| Feed | Detail Pekerjaan |
+|:---:|:---:|
+| ![Feed pekerjaan dengan filter dan asisten pencarian](docs/img/feed.png) | ![Detail pekerjaan dengan brief, penawaran, dan tanya jawab](docs/img/detail.png) |
+| Dua tab pekerjaan, filter kategori dan area, plus kotak asisten pencarian di panel kanan. | Brief lengkap, daftar penawaran yang masuk, dan tanya jawab terbuka sebelum menawar. |
+
+| Kesepakatan | Profil dan Portofolio |
+|:---:|:---:|
+| ![Halaman kesepakatan dengan status terkunci dan linimasa](docs/img/kesepakatan.png) | ![Profil dengan portofolio, rekam jejak, dan rekap pendapatan](docs/img/profil.png) |
+| Status terkunci, rincian harga beserta biaya admin, dan linimasa tiap tahap kesepakatan. | Portofolio yang terbentuk sendiri dari bukti kerja, rekam jejak, dan rekap pendapatan. |
+
+<div align="center">
+  <img src="docs/img/brief-assistant.png" alt="Brief Assistant mengisi tiga kolom brief dari satu kalimat" width="720" />
+  <br />
+  <em>Brief Assistant: satu kalimat jadi draf ruang lingkup, hasil akhir, dan tenggat. Semuanya masih bisa diedit sebelum diposting.</em>
+</div>
+-->
+
 ---
 
 ## Teknologi
@@ -93,7 +125,7 @@ Mahasiswa sering butuh uang cepat atau pengalaman kerja, tapi platform freelance
 | Platform | Supabase (`@supabase/supabase-js` 2.112) |
 | Database | PostgreSQL dengan Row Level Security di semua tabel |
 | Autentikasi | Supabase Auth (email dan password) |
-| Logika bisnis | 11 fungsi RPC PostgreSQL, dipanggil lewat `supabase.rpc(...)` |
+| Logika bisnis | 13 fungsi RPC PostgreSQL, dipanggil lewat `supabase.rpc(...)` |
 | Otomasi | 5 trigger PostgreSQL (notifikasi, auto-agree, auto-lock, pagar batas waktu) |
 | Penyimpanan file | Supabase Storage, bucket publik `bukti-kerja` |
 | Serverless function | Python di folder `api/`, dijalankan Vercel. Ekstraksi CV dan dua asisten AI |
@@ -209,7 +241,10 @@ rekam jejak pekerja walaupun kliennya menghilang, hanya saja tanpa rating dan te
 
 Semua operasi tulis dilakukan lewat fungsi berikut, bukan lewat akses tabel langsung.
 
-`create_job`, `submit_offer`, `select_offer`, `agree_to_agreement`, `submit_proof`, `confirm_completion`, `close_without_confirmation`, `cancel_agreement`, `report_unpaid`, `get_or_create_thread`, `send_message`
+`create_job`, `submit_offer`, `select_offer`, `agree_to_agreement`, `submit_proof`, `confirm_completion`, `close_without_confirmation`, `cancel_agreement`, `report_unpaid`, `get_or_create_thread`, `send_message`, `update_profile`, `add_job_comment`
+
+Dua yang terakhir definisinya ada di folder `migrations/`. Sebelas sisanya belum, lihat catatan
+di bagian Instalasi.
 
 ### Migrasi
 
@@ -223,6 +258,9 @@ Folder `supabase/migrations/` berisi perubahan skema yang bisa dijalankan ulang 
 | `0004_completion_timeout_guard.sql` | Pagar sisi server untuk batas 2 hari konfirmasi |
 | `0005_storage_bukti_kerja.sql` | Bucket `bukti-kerja` beserta policy penyimpanan |
 | `0006_update_profile.sql` | Fungsi `update_profile` untuk menyimpan detail profil dan skill |
+| `0007_job_comments.sql` | Tabel `job_comments`, fungsi `add_job_comment`, dan tipe notifikasi barunya |
+| `0008_profile_avatar.sql` | Kolom `avatar_url`, bucket `avatar`, dan policy penyimpanannya |
+| `0009_fix_avatar_validation.sql` | Perbaikan penyaring alamat avatar di `update_profile` |
 
 ---
 
@@ -269,7 +307,9 @@ membacanya lewat DevTools. Karena itu namanya sengaja **tanpa** awalan `VITE_`: 
 setiap variabel berawalan itu ke dalam bundel JavaScript yang dikirim ke browser.
 
 Model yang dipakai Claude Haiku 4.5, sekitar $0,001 per panggilan. Aplikasinya tetap berjalan
-penuh tanpa API key, hanya ketiga fitur di atas yang mati dan mengatakannya apa adanya.
+penuh tanpa API key: yang mati hanya Brief Assistant dan Search Assistant, dan keduanya
+mengatakannya apa adanya. Isi Profil dari CV tetap hidup karena pembacaan PDF-nya murni pola,
+tidak memanggil model sama sekali.
 
 ---
 
@@ -323,7 +363,11 @@ Dua asisten AI juga menolak permintaan dari pengunjung yang belum masuk, jadi en
 
 ### 4. Siapkan Database
 
-Buka SQL Editor di dashboard Supabase, lalu jalankan isi `supabase/migrations/` secara berurutan dari `0001` sampai `0005`. Semuanya idempotent, jadi aman dijalankan ulang.
+Buka SQL Editor di dashboard Supabase, lalu jalankan isi `supabase/migrations/` secara berurutan dari `0001` sampai `0009`. Semuanya idempotent, jadi aman dijalankan ulang.
+
+Sembilan file itu harus dijalankan semua. Melewatkan `0007` membuat kolom komentar di halaman
+pekerjaan gagal mengirim, dan melewatkan `0008` beserta `0009` membuat penyimpanan profil
+menolak setiap avatar yang dipilih pengguna.
 
 > **Catatan penting untuk setup dari nol.** Repository ini belum menyimpan definisi SQL dari 11 fungsi RPC dan skema tabel awal (`profiles`, `jobs`, `offers`, `agreements`, `threads`, `messages`). Fungsi-fungsi itu dibuat lebih dulu langsung di dashboard Supabase sebelum praktik migrasi berbasis file diterapkan. Artinya, menjalankan folder `migrations/` saja belum cukup untuk membangun project Supabase yang benar-benar baru. Memindahkan sisa skema ke file migrasi masih jadi pekerjaan yang belum selesai.
 

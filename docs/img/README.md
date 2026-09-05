@@ -24,5 +24,14 @@ sudah berisi data contoh. Simpan sebagai PNG dengan nama persis seperti di bawah
 
 ## Setelah gambarnya ada
 
-Tempel blok markdown yang sudah disiapkan ke `README.md`, tepat setelah bagian
-"Fitur Tambahan". Blok itu ada di catatan tim, atau minta lagi ke Claude.
+Blok markdown-nya **sudah ada** di `README.md`, tepat setelah bagian "Fitur Tambahan", tapi
+masih dibungkus komentar HTML supaya README tidak menampilkan ikon gambar rusak selama
+berkasnya belum ada.
+
+Yang perlu dilakukan tinggal dua:
+
+1. Hapus baris `<!--` dan `-->` yang membungkus bagian `### Tampilan` di `README.md`.
+2. Tambahkan `- [Tampilan](#tampilan)` ke Daftar Isi, setelah baris `- [Fitur Unggulan](...)`.
+
+Setelah itu cek hasilnya di pratinjau GitHub, bukan cuma di editor: tabel dua kolom dan tag
+`<img>` di dalamnya baru kelihatan benar setelah dirender.

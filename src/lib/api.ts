@@ -383,9 +383,9 @@ export async function fetchUserByHandle(handle: string): Promise<User | undefine
 // Satu-satunya jalan tulis ke kolom profil. Pembersihan isian (trim, buang skill kembar,
 // batas panjang) sengaja tidak dilakukan di sini melainkan di dalam RPC, supaya aturannya
 // sama untuk semua pemanggil. Lihat supabase/migrations/0006_update_profile.sql.
-// Ekstraksi CV. Endpoint-nya tidak memegang rahasia apa pun, jadi dipanggil langsung dari
-// browser. Alamatnya lewat env supaya bisa diarahkan ke server lokal saat development dan ke
-// /api/extract-cv saat sudah di Vercel, tanpa mengubah kode.
+// Ekstraksi CV. Endpoint-nya tidak memegang rahasia apa pun, tapi tetap minta sesi yang sah
+// karena membaca PDF itu pekerjaan CPU yang mahal. Alamatnya lewat env supaya bisa diarahkan ke
+// server lokal saat development dan ke /api/extract-cv saat sudah di Vercel, tanpa mengubah kode.
 // Sengaja pakai || bukan ??, karena env var yang didaftarkan di Vercel tapi dibiarkan
 // kosong bernilai string kosong, bukan undefined. Dengan ?? nilai kosong itu lolos dan
 // aplikasi menembak fetch(''), yang berarti POST ke halaman itu sendiri.
@@ -407,9 +407,18 @@ export async function extractCvProfile(file: File): Promise<CvDraft> {
     throw new Error('Ukuran file maksimal 4 MB.');
   }
 
+  // Token dikirim karena sejak sekarang endpoint-nya menolak pemanggil tanpa sesi. Formulir
+  // ini cuma hidup di halaman Profil yang sudah di balik login, jadi ketiadaan token di sini
+  // berarti sesinya kedaluwarsa di tengah jalan, bukan alur yang memang boleh anonim.
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) {
+    throw new Error('Sesi kamu sudah habis, masuk lagi untuk membaca CV.');
+  }
+
   const response = await fetch(CV_EXTRACT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/pdf' },
+    headers: { 'Content-Type': 'application/pdf', Authorization: `Bearer ${token}` },
     body: file
   });
 

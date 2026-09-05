@@ -1,10 +1,45 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stepping Stone Job Platform</title>
+
+    <title>Stepping Stone — Kerja Kampus, Kesepakatan Jelas, Portofolio Nyata</title>
+    <meta
+      name="description"
+      content="Forum kerja antar mahasiswa dalam satu kampus. Ajukan penawaran, kunci kesepakatan supaya harga dan tenggat tidak bisa berubah sepihak, lalu kumpulkan bukti kerja dan testimoni jadi portofolio."
+    />
+
+    <!-- Ikon. Ditaruh di public/ supaya ikut tersalin apa adanya ke hasil build. Rewrite SPA di
+         vercel.json baru berlaku kalau tidak ada berkas statis yang cocok, jadi alamat ini
+         tidak akan tertelan jadi index.html seperti /vite.svg dulu. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+
+    <!-- Pratinjau waktu tautannya dibagikan (WhatsApp, Discord, X). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Stepping Stone" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:url" content="https://stepping-stone-eight.vercel.app/" />
+    <meta property="og:title" content="Stepping Stone — Kerja Kampus, Kesepakatan Jelas, Portofolio Nyata" />
+    <meta
+      property="og:description"
+      content="Forum kerja antar mahasiswa dalam satu kampus. Kesepakatan yang terkunci, bukti kerja yang jadi portofolio."
+    />
+    <meta property="og:image" content="https://stepping-stone-eight.vercel.app/hero-campus.jpg" />
+    <meta property="og:image:width" content="2560" />
+    <meta property="og:image:height" content="1115" />
+    <meta property="og:image:alt" content="Suasana kampus, halaman depan Stepping Stone" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Stepping Stone — Kerja Kampus, Kesepakatan Jelas, Portofolio Nyata" />
+    <meta
+      name="twitter:description"
+      content="Forum kerja antar mahasiswa dalam satu kampus. Kesepakatan yang terkunci, bukti kerja yang jadi portofolio."
+    />
+    <meta name="twitter:image" content="https://stepping-stone-eight.vercel.app/hero-campus.jpg" />
   </head>
   <body>
     <div id="root"></div>

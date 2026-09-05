@@ -1,6 +1,8 @@
 """Pemanggilan Claude, verifikasi user, dan batas pemakaian.
 
-Dipakai bersama oleh `api/draft-brief.py` dan `api/parse-search.py`. Modul ini yang memegang
+Pemanggilan Claude dipakai `api/draft-brief.py` dan `api/parse-search.py`; penjaga sesi dan
+batas pemakaiannya dipakai `api/extract-cv.py` juga. Karena itu pesan penolakannya ditulis
+netral, tidak menyebut "asisten", supaya tetap masuk akal waktu yang ditolak unggahan CV. Modul ini yang memegang
 `ANTHROPIC_API_KEY`; key itu tidak pernah sampai ke browser.
 
 Sengaja memakai `urllib` dan bukan SDK Anthropic. API Messages cuma satu POST JSON, sementara
@@ -62,7 +64,7 @@ def verify_user(auth_header) -> str:
     header = auth_header or ""
     token = header[7:].strip() if header.lower().startswith("bearer ") else ""
     if not token:
-        raise LlmError(401, "Masuk dulu untuk memakai asisten.")
+        raise LlmError(401, "Masuk dulu untuk memakai fitur ini.")
 
     base = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL")
     key = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("VITE_SUPABASE_ANON_KEY")
@@ -77,13 +79,13 @@ def verify_user(auth_header) -> str:
         with urllib.request.urlopen(request, timeout=SUPABASE_TIMEOUT) as response:
             profile = json.load(response)
     except urllib.error.HTTPError:
-        raise LlmError(401, "Sesimu sudah berakhir. Masuk lagi untuk memakai asisten.")
+        raise LlmError(401, "Sesimu sudah berakhir. Masuk lagi untuk melanjutkan.")
     except urllib.error.URLError:
         raise LlmError(503, "Tidak bisa memeriksa sesi sekarang. Coba lagi sebentar lagi.")
 
     user_id = profile.get("id") if isinstance(profile, dict) else None
     if not user_id:
-        raise LlmError(401, "Masuk dulu untuk memakai asisten.")
+        raise LlmError(401, "Masuk dulu untuk memakai fitur ini.")
     return user_id
 
 
@@ -93,7 +95,7 @@ def enforce_rate_limit(user_id: str):
     while seen and now - seen[0] > RATE_LIMIT_WINDOW:
         seen.popleft()
     if len(seen) >= RATE_LIMIT_CALLS:
-        raise LlmError(429, "Terlalu banyak permintaan ke asisten. Coba lagi beberapa menit lagi.")
+        raise LlmError(429, "Terlalu banyak permintaan. Coba lagi beberapa menit lagi.")
     seen.append(now)
 
 
