@@ -30,3 +30,7 @@ __pycache__/
 *.py[cod]
 .venv
 venv/
+
+# Bahan mentah tangkapan layar. Versi yang dipakai README sudah ada di docs/img/
+# dalam ukuran yang jauh lebih kecil, jadi yang ini tidak perlu ikut ke repositori.
+src/FotoUntukREADME*/

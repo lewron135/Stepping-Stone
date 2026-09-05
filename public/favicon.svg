@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Stepping Stone">
+  <rect width="64" height="64" rx="14" fill="#09090b"/>
+  <g fill="#ffffff">
+    <rect x="10" y="38" width="13" height="13" rx="4"/>
+    <rect x="25.5" y="28.5" width="13" height="13" rx="4"/>
+    <rect x="41" y="19" width="13" height="13" rx="4"/>
+  </g>
+</svg>
